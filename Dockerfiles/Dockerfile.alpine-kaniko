@@ -1,0 +1,18 @@
+FROM gcr.io/kaniko-project/executor:latest AS kaniko
+COPY dockerconfig.json /kaniko/.docker/config.json
+
+FROM alpine:latest
+RUN apk update && \
+    apk add --no-cache \
+    bash \
+    git \
+    curl \
+    ca-certificates
+
+COPY --from=kaniko /kaniko/executor /kaniko/
+COPY --from=kaniko /kaniko/docker-credential-acr /kaniko/
+COPY --from=kaniko /kaniko/docker-credential-ecr-login /kaniko/
+COPY --from=kaniko /kaniko/docker-credential-gcr /kaniko/
+COPY --from=kaniko /kaniko/.docker/config.json /kaniko/.docker/
+
+ENV PATH="$PATH:/kaniko"

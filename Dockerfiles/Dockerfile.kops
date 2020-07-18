@@ -1,0 +1,23 @@
+FROM debian:stretch-slim
+
+ENV DEBIAN_FRONTEND noninteractive
+
+ARG KOPS_VERSION
+ARG KUBECTL_VERSION
+
+RUN apt update -y \
+    && apt install -y -f --no-install-recommends \
+        wget \
+        unzip \
+        direnv \
+        ca-certificates \
+    && wget https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 \
+    && wget https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && chmod +x kubectl \
+    && chmod +x kops-linux-amd64 \
+    && mv kubectl /usr/local/bin/kubectl \
+    && mv kops-linux-amd64 /usr/local/bin/kops \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc \
+    && rm -Rf /usr/share/man \
+    && apt-get clean

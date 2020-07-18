@@ -1,0 +1,10 @@
+{
+  "auths": {
+          "https://index.docker.io/v1/": {
+                  "auth": ""
+          },
+          "https://index.docker.io/v2/": {
+                  "auth": ""
+          }
+  }
+}
