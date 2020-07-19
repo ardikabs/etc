@@ -1,0 +1,9 @@
+FROM alpine:latest
+RUN apk update \
+    && apk add --no-cache \
+        vim \
+        bash \
+        git \
+        curl \
+        dig \
+        ca-certificates
