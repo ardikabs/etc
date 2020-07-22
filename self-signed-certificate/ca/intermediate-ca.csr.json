@@ -1,0 +1,16 @@
+{
+  "CN": "Ardika Labs Intermediate CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Jakarta",
+      "O": "Ardika Labs",
+      "OU": "ardikabs.com",
+      "ST": "Jakarta Selatan"
+    }
+  ]
+}

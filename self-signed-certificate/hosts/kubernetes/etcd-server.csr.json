@@ -1,0 +1,23 @@
+{
+  "CN": "etcd",
+  "hosts": [
+    "nodename",
+    "localhost",
+    "172.18.0.5",
+    "127.0.0.1",
+    "::1"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Jakarta",
+      "O": "etcd",
+      "OU": "etcd client",
+      "ST": "Jakarta Selatan"
+    }
+  ]
+}

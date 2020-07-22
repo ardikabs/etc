@@ -1,0 +1,21 @@
+{
+  "CN": "vault.vault.svc.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Jakarta",
+      "O": "Ardika Labs",
+      "OU": "Vault",
+      "ST": "Jakarta Selatan"
+    }
+  ],
+  "hosts": [
+    "vault.vault.svc.cluster.local",
+    "127.0.0.1",
+    "vault"
+  ]
+}

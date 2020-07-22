@@ -1,0 +1,20 @@
+{
+  "CN": "server.dc1.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Jakarta",
+      "O": "Ardika Labs",
+      "OU": "Consul",
+      "ST": "Jakarta Selatan"
+    }
+  ],
+  "hosts": [
+    "server.dc1.cluster.local",
+    "127.0.0.1"
+  ]
+}
