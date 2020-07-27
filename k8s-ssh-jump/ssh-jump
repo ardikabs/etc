@@ -15,7 +15,7 @@ kubectl run sshjump -n default --image=corbinu/ssh-server --port=22 --restart=Ne
 c=1
 while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
 do
-    pod_status=$(kubectl get pod sshjump 2>/dev/null | tail -1 | awk '{print $3}')
+    pod_status=$(kubectl get pod sshjump -n default 2>/dev/null | tail -1 | awk '{print $3}')
     if [ "${pod_status}" = "Running" ]; then
     break
     fi
@@ -25,10 +25,10 @@ done
 fi
 
 # Setup portforward
-kubectl port-forward sshjump 2222:22 2>/dev/null &
+kubectl port-forward -n default sshjump 2222:22 2>/dev/null &
 pid_port_forward=$!
 
-ssh-add -L | kubectl exec -i sshjump -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
+ssh-add -L | kubectl exec -i sshjump -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
 
 ssh $DESTINATION_NODE $IDENTITY_FILE
 
