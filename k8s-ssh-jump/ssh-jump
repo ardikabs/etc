@@ -1,0 +1,37 @@
+#!/bin/bash
+
+DESTINATION_NODE=$1
+
+[ -n $2 ] && IDENTITY_FILE="-i $2"
+
+MAX_POD_CREATION_TIME=10
+
+# Install an SSH Server if not yet installed
+r=$(kubectl get pod sshjump 2>/dev/null | tail -1 | awk '{print $1}') #
+if [ "${r}" != "sshjump" ];then
+echo "Creating SSH jump host (Pod)..."
+kubectl run sshjump -n default --image=corbinu/ssh-server --port=22 --restart=Never
+# Wait until sshjump gets ready
+c=1
+while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
+do
+    pod_status=$(kubectl get pod sshjump 2>/dev/null | tail -1 | awk '{print $3}')
+    if [ "${pod_status}" = "Running" ]; then
+    break
+    fi
+    (( c++ ))
+    sleep 1
+done
+fi
+
+# Setup portforward
+kubectl port-forward sshjump 2222:22 2>/dev/null &
+pid_port_forward=$!
+
+ssh-add -L | kubectl exec -i sshjump -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
+
+ssh $DESTINATION_NODE $IDENTITY_FILE
+
+kill -3 ${pid_port_forward} 2>/dev/null
+
+kubectl delete pod sshjump -n default --force
