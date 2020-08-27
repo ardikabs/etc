@@ -1,9 +1,11 @@
 FROM alpine
 
-RUN apk update && apk add --no-cache strongswan
+RUN apk update \
+    && apk add --no-cache \
+        curl \
+        strongswan \
+        ca-certificates
 
-COPY isrgrootx1.pem.txt /isrgrootx1.pem.txt
-COPY letsencryptauthorityx3.pem.txt /letsencryptauthorityx3.pem.txt
-COPY entrypoint.sh entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
