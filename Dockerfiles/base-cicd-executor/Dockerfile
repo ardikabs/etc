@@ -2,7 +2,7 @@ FROM debian:stretch-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD entrypoint.sh /usr/local/bin/executor-entrypoint
+ADD entrypoint.sh /usr/local/bin/entrypoint.base
 
 RUN apt update -y \
     && apt install -y -f --no-install-recommends \
@@ -18,4 +18,4 @@ RUN apt update -y \
     && rm -Rf /usr/share/man \
     && apt-get clean
 
-ENTRYPOINT ["/usr/local/bin/executor-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.base"]

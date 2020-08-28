@@ -1,0 +1,12 @@
+stages:
+- push
+
+common-scripts:
+  stage: push
+  script:
+  - chmod +x -R bin/
+  artifacts:
+    name: "common-scripts"
+    paths:
+      - ./bin
+      - ./shared

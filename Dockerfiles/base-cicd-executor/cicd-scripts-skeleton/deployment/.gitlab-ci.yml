@@ -1,0 +1,12 @@
+stages:
+- push
+
+deployment-scripts:
+  stage: push
+  script:
+  - chmod +x -R bin/
+  artifacts:
+    name: "deployment-scripts"
+    paths:
+      - ./bin
+      - ./shared

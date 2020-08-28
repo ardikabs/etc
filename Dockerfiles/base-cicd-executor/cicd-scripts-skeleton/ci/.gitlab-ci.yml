@@ -1,0 +1,12 @@
+stages:
+- push
+
+ci-scripts:
+  stage: push
+  script:
+  - chmod +x -R bin/
+  artifacts:
+    name: "ci-scripts"
+    paths:
+      - ./bin
+      - ./shared
