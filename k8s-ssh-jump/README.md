@@ -1,11 +1,44 @@
+# Disclaimer
+* This script ONLY tested in Linux environment since the script is a simple bash script.<br>
+
 # Prerequisites
-1. This script ONLY tested in Linux environment<br>
-  **TODO: Support MacOS and Windows**
+1. Clone this repository
+1. Move `ssh-jump` to `/usr/local/bin`
+1. Enjoy
+```bash
+$ git clone https://github.com/ardikabs/etc.git
+$ mv etc/k8s-ssh-jump/ssh-jump /usr/local/bin/
+$ ssh-jump
+```
 
 # How-to
-Running this command: `./ssh-jump ${DESTINATION_NODE} ${/path/to/IDENTITY_FILE} ${SSH_USER:-centos} ${SSH_PORT:-22}`
+## Usage
+```bash
+$ ssh-jump --help
+ssh-jump is a command line tool for ssh'ing to an instance under kubernetes host private networks
+
+Usage:
+    ssh-jump [flags] TARGET_NODE
+
+Examples:
+
+    # Use ssh key from selected file
+    ssh-jump -i ~/.ssh/id_rsa ip-10-0-10-217.ap-southeast-1.compute.internal
+
+    # Use ssh private key from ssh-agent
+    ssh-jump ip-10-0-10-217.ap-southeast-1.compute.internal
+
+Flags:
+  -h, --help          : show this message
+  -u, --username      : Target SSH username. Default "centos".
+  -p, --port          : Target SSH Port. Default "22".
+  -i, --identity-file : Target SSH identity file.
+  -o, --ssh-opts      : SSH additional flags.
 ```
-$ ./ssh-jump.sh ip-10-0-30-61.ap-southeast-1.compute.internal /path/to/ssh-private-key.pem
+
+## SSH'ing to the target node
+```
+$ ssh-jump -i /path/to/ssh-private-key.pem ip-10-0-30-61.ap-southeast-1.compute.internal
 Creating SSH jump host (Pod)...
 pod/sshjump-z80ursw created
 Forwarding from 127.0.0.1:50183 -> 22
@@ -19,6 +52,6 @@ Last login: Mon Jul 27 03:06:36 2020 from ip-10-0-10-211.ap-southeast-1.compute.
 .
 [centos@ip-10-0-30-61 ~]$ logout
 Connection to ip-10-0-30-61.ap-southeast-1.compute.internal closed.
-warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+Terminating pod/sshjump-z80ursw
 pod "sshjump-z80ursw" force deleted
 ```

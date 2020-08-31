@@ -1,56 +1,183 @@
 #!/bin/bash
 
-terminate(){
-    echo -e "\nTerminating pod/${POD_NAME}"
+set -o pipefail
+
+RED='\033[1;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+LGREEN='\033[1;92m'
+LYELLOW='\033[1;93m'
+WHITE='\033[1;97m'
+NC='\033[0m'
+
+SSH_USERNAME=""
+SSH_PORT=""
+SSH_IDENTITY_FILE=""
+SSH_OPTS=""
+DESTINATION_NODE=""
+
+usage() {
+cat <<EOF
+ssh-jump is a command line tool for ssh'ing to an instance under kubernetes host private networks
+
+Usage:
+    ssh-jump [flags] TARGET_NODE
+
+Examples:
+
+    # Use ssh key from selected file
+    ssh-jump -i ~/.ssh/id_rsa ip-10-0-10-217.ap-southeast-1.compute.internal
+
+    # Use ssh private key from ssh-agent
+    ssh-jump ip-10-0-10-217.ap-southeast-1.compute.internal
+
+Flags:
+  -h, --help          : show this message
+  -u, --username      : Target SSH username. Default "centos".
+  -p, --port          : Target SSH Port. Default "22".
+  -i, --identity-file : Target SSH identity file.
+  -o, --ssh-opts      : SSH additional flags.
+EOF
+
+exit 0
+}
+
+parseFlags(){
+    if [[ "$#" -eq 0 ]]; then
+        usage
+    elif ! [[ "$1" =~ ^- ]]; then
+        echo -e "${RED}Error!${NC} Invalid positional arguments"
+        echo -e "Expected format: 'ssh-jump [flags] TARGET_NODE'"
+        echo -e "Exiting..."
+        exit 1
+    fi
+
+    # Parsing flags
+    for arg in "$@"
+    do
+        case $arg in
+            -h|--help)
+            usage
+            ;;
+            -u=*|--username=*|-u|--username)
+            if [[ "${arg#*=}" =~ ^- ]];
+            then
+                SSH_USERNAME="$2"
+                shift # Remove --username from processing
+                shift # Remove username value from processing
+            else
+                SSH_USERNAME="${arg#*=}"
+                shift # Remove --username=* from processing
+            fi
+            ;;
+            -p=*|--port=*|-p|--port)
+            if [[ "${arg#*=}" =~ ^- ]];
+            then
+                SSH_PORT="$2"
+                shift # Remove --port from processing
+                shift # Remove port value from processing
+            else
+                SSH_PORT="${arg#*=}"
+                shift # Remove --port=* from processing
+            fi
+            ;;
+            -i=*|--identity-file=*|-i|--identity-file)
+            if [[ "${arg#*=}" =~ ^- ]];
+            then
+                SSH_IDENTITY_FILE="-i $2"
+                shift # Remove --identity-file from processing
+                shift # Remove identity-file value from processing
+            else
+                SSH_IDENTITY_FILE="-i ${arg#*=}"
+                shift # Remove --identity-file=* from processing
+            fi
+            ;;
+            -o=*|--ssh-opts=*|-o|--ssh-opts)
+            if [[ "${arg#*=}" =~ ^- ]];
+            then
+                SSH_OPTS="-i $2"
+                shift # Remove --ssh-opts from processing
+                shift # Remove ssh-opts value from processing
+            else
+                SSH_OPTS="-i ${arg#*=}"
+                shift # Remove --ssh-opts=* from processing
+            fi
+            ;;
+        esac
+    done
+
+    # Parsing arguments
+    if [[ $# -eq 1 ]]; then
+        DESTINATION_NODE=$1
+    elif [[ $# -eq 0 ]]; then
+        echo -e "${RED}Error!${NC} You need to provide destination node to be ssh'ed"
+        echo -e "${YELLOW}Expected format: 'ssh-jump [flags] TARGET_NODE'${NC}"
+        echo -e "Exiting..."
+        exit 1
+    else
+        echo -e "${RED}Error!${NC} Too many arguments"
+        echo -e "${YELLOW}Expected format:${NC} ${LGREEN}'ssh-jump [flags] TARGET_NODE'${NC}"
+        echo -e "Exiting..."
+        exit 1
+    fi
+
+
+    SSH_USERNAME=${SSH_USERNAME:-centos}
+    SSH_PORT=${SSH_PORT:-22}
+    SSH_IDENTITY_FILE=${SSH_IDENTITY_FILE}
+}
+
+terminateSSHPod(){
+    echo ""
+    echo -e "Terminating pod/${POD_NAME}"
     kill -3 ${pid_port_forward} > /dev/null 2>&1
     kubectl delete pod ${POD_NAME} -n default --force --grace-period=0  2> /dev/null
     exit 0
 }
 
-DESTINATION_NODE=$1
+main(){
 
-[ -n $2 ] && IDENTITY_FILE="-i $2"
+    parseFlags "$@"
 
-SSH_USER=$3
-SSH_PORT=$4
+    MAX_POD_CREATION_TIME=10
+    POD_NAME=sshjump-$(head /dev/urandom | tr -dc a-z0-9 | head -c 7 ; echo '')
 
-MAX_POD_CREATION_TIME=10
+    # Install a temporary SSH-server jumper
+    echo "Creating SSH jump host (Pod)..."
+    kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
+    trap terminateSSHPod SIGINT
 
-POD_NAME=sshjump-$(head /dev/urandom | tr -dc a-z0-9 | head -c 7 ; echo '')
+    # Wait until sshjump gets ready
+    c=1
+    while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
+    do
+        pod_status=$(kubectl get pod ${POD_NAME} -n default --no-headers 2>/dev/null | awk '{print $3}')
+        [ "${pod_status}" = "Running" ] && break
 
-# Install an SSH Server if not yet installed
-r=$(kubectl get pod ${POD_NAME} -n default 2>/dev/null | tail -1 | awk '{print $1}') #
-if [ "${r}" != "${POD_NAME}" ];then
-echo "Creating SSH jump host (Pod)..."
-kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
-trap terminate SIGINT
+        (( c++ ))
+        sleep 1
+    done
 
-# Wait until sshjump gets ready
-c=1
-while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
-do
-    pod_status=$(kubectl get pod ${POD_NAME} -n default 2>/dev/null | tail -1 | awk '{print $3}')
-    if [ "${pod_status}" = "Running" ]; then
-    break
-    fi
-    (( c++ ))
-    sleep 1
-done
-fi
+    # Setup portforward
+    RANDOM_PORT_FORWARDING=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 2>/dev/null &
+    pid_port_forward=$!
 
-# Setup portforward
-RANDOM_PORT_FORWARDING=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
-kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 2>/dev/null &
-pid_port_forward=$!
+    sleep 5
 
-sleep 5
+    ssh-add -L | kubectl exec -i ${POD_NAME} -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
 
-ssh-add -L | kubectl exec -i ${POD_NAME} -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
+    ssh $DESTINATION_NODE $SSH_IDENTITY_FILE \
+        -l ${SSH_USERNAME} -p ${SSH_PORT} \
+        ${SSH_OPTS} \
+        -o ForwardAgent=yes \
+        -o ServerAliveInterval=60s \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
 
-ssh $DESTINATION_NODE $IDENTITY_FILE \
-    -l ${SSH_USER:-centos} -p ${SSH_PORT:-22} \
-    -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null \
-    -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
+    terminateSSHPod
+}
 
-terminate
+main "$@"
