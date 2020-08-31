@@ -1,5 +1,12 @@
 #!/bin/bash
 
+terminate(){
+    echo -e "\nTerminating pod/${POD_NAME}"
+    kill -3 ${pid_port_forward} > /dev/null 2>&1
+    kubectl delete pod ${POD_NAME} -n default --force --grace-period=0  2> /dev/null
+    exit 0
+}
+
 DESTINATION_NODE=$1
 
 [ -n $2 ] && IDENTITY_FILE="-i $2"
@@ -16,6 +23,8 @@ r=$(kubectl get pod ${POD_NAME} -n default 2>/dev/null | tail -1 | awk '{print $
 if [ "${r}" != "${POD_NAME}" ];then
 echo "Creating SSH jump host (Pod)..."
 kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
+trap terminate SIGINT
+
 # Wait until sshjump gets ready
 c=1
 while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
@@ -29,11 +38,12 @@ do
 done
 fi
 
-
 # Setup portforward
 RANDOM_PORT_FORWARDING=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 2>/dev/null &
 pid_port_forward=$!
+
+sleep 5
 
 ssh-add -L | kubectl exec -i ${POD_NAME} -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
 
@@ -43,6 +53,4 @@ ssh $DESTINATION_NODE $IDENTITY_FILE \
     -o UserKnownHostsFile=/dev/null \
     -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
 
-kill -3 ${pid_port_forward} 2>/dev/null
-
-kubectl delete pod ${POD_NAME} -n default --force
+terminate
