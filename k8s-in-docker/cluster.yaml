@@ -1,33 +1,78 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "192.168.0.0/20"
+  disableDefaultCNI: false
 nodes:
 - role: control-plane
   image: kindest/node:v1.16.4
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "availability-zone=ap-southeast-1a"
 - role: control-plane
   image: kindest/node:v1.16.4
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "availability-zone=ap-southeast-1b"
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
 - role: control-plane
   image: kindest/node:v1.16.4
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "availability-zone=ap-southeast-1c"
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "http=true"
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
+  - hostPath: /etc
+    containerPath: /etc
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    listenAddress: 127.0.0.1 # 0.0.0.0 is the current default
+    protocol: TCP
