@@ -10,8 +10,6 @@ nodes:
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -29,8 +27,6 @@ nodes:
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
 - role: control-plane
   image: kindest/node:v1.16.4
   kubeadmConfigPatches:
@@ -42,22 +38,16 @@ nodes:
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
 - role: worker
   image: kindest/node:v1.16.4
   kubeadmConfigPatches:
@@ -69,10 +59,12 @@ nodes:
   extraMounts:
   - hostPath: /dev
     containerPath: /dev
-  - hostPath: /etc
-    containerPath: /etc
   extraPortMappings:
   - containerPort: 80
-    hostPort: 80
-    listenAddress: 127.0.0.1 # 0.0.0.0 is the current default
+    hostPort: 5080
+    listenAddress: 0.0.0.0
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 5443
+    listenAddress: 0.0.0.0
     protocol: TCP
