@@ -43,14 +43,20 @@ EOF
 exit 0
 }
 
+showErr(){
+    errMessage=$1
+
+    echo -e "${RED}ERROR${NC} $errMessage"
+    echo -e "${YELLOW}Expected format:${NC} ${LGREEN}'ssh-jump [flags] TARGET_NODE'${NC}"
+    exit 1
+}
+
 parseFlags(){
+
     if [[ "$#" -eq 0 ]]; then
         usage
-    elif ! [[ "$1" =~ ^- ]]; then
-        echo -e "${RED}Error!${NC} Invalid positional arguments"
-        echo -e "Expected format: 'ssh-jump [flags] TARGET_NODE'"
-        echo -e "Exiting..."
-        exit 1
+    elif [[ ! "$1" =~ ^- && "$#" -ge 2 ]]; then
+        showErr "Invalid positional arguments"
     fi
 
     # Parsing flags
@@ -108,21 +114,13 @@ parseFlags(){
     done
 
     # Parsing arguments
-    if [[ $# -eq 1 ]]; then
-        DESTINATION_NODE=$1
-    elif [[ $# -eq 0 ]]; then
-        echo -e "${RED}Error!${NC} You need to provide destination node to be ssh'ed"
-        echo -e "${YELLOW}Expected format: 'ssh-jump [flags] TARGET_NODE'${NC}"
-        echo -e "Exiting..."
-        exit 1
-    else
-        echo -e "${RED}Error!${NC} Too many arguments"
-        echo -e "${YELLOW}Expected format:${NC} ${LGREEN}'ssh-jump [flags] TARGET_NODE'${NC}"
-        echo -e "Exiting..."
-        exit 1
+    if [[ $# -eq 0 ]]; then
+        showErr "You need to provide destination node to be ssh'ed"
+    elif [[ $# -gt 1 ]]; then
+        showErr "Too many arguments"
     fi
 
-
+    DESTINATION_NODE=$1
     SSH_USERNAME=${SSH_USERNAME:-centos}
     SSH_PORT=${SSH_PORT:-22}
     SSH_IDENTITY_FILE=${SSH_IDENTITY_FILE}
