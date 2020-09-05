@@ -1,12 +1,10 @@
 [Unit]
 Description=Kubernetes health monitoring for %i
 After=docker.service kubelet.service
-Requires=docker.service
 
 [Service]
 Restart=always
 RestartSec=10
-RemainAfterExit=yes
 RemainAfterExit=yes
 ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
 ExecStart=/usr/local/bin/health-monitor.sh %i
