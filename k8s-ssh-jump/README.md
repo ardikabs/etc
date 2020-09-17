@@ -1,5 +1,5 @@
 # Disclaimer
-* This script ONLY tested in Linux environment since the script is a simple bash script.<br>
+This script is a simple bash script and expect to run with `ss` command for Linux/GNU OS. Other than Linux/GNU OS, this script will randomized port between `49152 - 59152` to be used without any check, so it is expected in case picked port is already on used then script would be exit with non-zero status code and you need to re-run the script.
 
 # Prerequisites
 1. Clone this repository
