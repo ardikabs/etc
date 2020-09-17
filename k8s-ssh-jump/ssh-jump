@@ -158,7 +158,12 @@ main(){
     done
 
     # Setup portforward
-    RANDOM_PORT_FORWARDING=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    if [ `uname -s` = Linux ]; then
+        RANDOM_PORT_FORWARDING=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    elif [ `uname -s` = Darwin ]; then
+        RANDOM_PORT_FORWARDING=$(seq 49152 59152 | shuf | head -n 1)
+    fi
+
     kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 2>/dev/null &
     pid_port_forward=$!
 
