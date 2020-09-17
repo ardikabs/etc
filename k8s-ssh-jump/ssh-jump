@@ -139,7 +139,7 @@ main(){
     parseFlags "$@"
 
     MAX_POD_CREATION_TIME=10
-    POD_NAME=sshjump-$(head /dev/urandom | tr -dc a-z0-9 | head -c 7 ; echo '')
+    POD_NAME=sshjump-$(head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7 ; echo '')
 
     # Install a temporary SSH-server jumper
     echo "Creating SSH jump host (Pod)..."
