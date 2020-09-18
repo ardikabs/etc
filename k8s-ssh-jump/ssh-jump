@@ -144,7 +144,7 @@ main(){
     # Install a temporary SSH-server jumper
     echo "Creating SSH jump host (Pod)..."
     kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
-    trap terminateSSHPod SIGINT
+    trap terminateSSHPod SIGINT EXIT INT TERM
 
     # Wait until sshjump gets ready
     c=1
@@ -164,7 +164,7 @@ main(){
         RANDOM_PORT_FORWARDING=$(seq 49152 59152 | shuf | head -n 1)
     fi
 
-    kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 2>/dev/null &
+    kubectl port-forward -n default ${POD_NAME} ${RANDOM_PORT_FORWARDING}:22 &
     pid_port_forward=$!
 
     sleep 5
@@ -180,7 +180,6 @@ main(){
         -o UserKnownHostsFile=/dev/null \
         -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
 
-    terminateSSHPod
 }
 
 main "$@"
