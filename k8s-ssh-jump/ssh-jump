@@ -17,6 +17,8 @@ SSH_IDENTITY_FILE=""
 SSH_OPTS=""
 DESTINATION_NODE=""
 
+EXIT=0
+
 usage() {
 cat <<EOF
 ssh-jump is a command line tool for ssh'ing to an instance under kubernetes host private networks
@@ -129,9 +131,9 @@ parseFlags(){
 terminateSSHPod(){
     echo ""
     echo -e "Terminating pod/${POD_NAME}"
-    kill -3 ${pid_port_forward} > /dev/null 2>&1
+    kill -2 ${pid_port_forward} >/dev/null 2>&1
     kubectl delete pod ${POD_NAME} -n default --force --grace-period=0  2> /dev/null
-    exit 0
+    exit $EXIT
 }
 
 main(){
@@ -144,7 +146,7 @@ main(){
     # Install a temporary SSH-server jumper
     echo "Creating SSH jump host (Pod)..."
     kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
-    trap terminateSSHPod SIGINT EXIT INT TERM
+    trap terminateSSHPod SIGINT SIGTERM
 
     # Wait until sshjump gets ready
     c=1
@@ -155,6 +157,8 @@ main(){
 
         (( c++ ))
         sleep 1
+
+        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo -e "${RED}ERROR:${NC} Timeout exceeded while creating Pod ${POD_NAME}"; terminateSSHPod; }
     done
 
     # Setup portforward
@@ -180,6 +184,7 @@ main(){
         -o UserKnownHostsFile=/dev/null \
         -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
 
+    terminateSSHPod
 }
 
 main "$@"
