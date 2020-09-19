@@ -158,7 +158,7 @@ main(){
         (( c++ ))
         sleep 1
 
-        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo -e "${RED}ERROR:${NC} Timeout exceeded while creating Pod ${POD_NAME}"; terminateSSHPod; }
+        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded while creating Pod ${POD_NAME}"; EXIT=1; terminateSSHPod; }
     done
 
     # Setup portforward
