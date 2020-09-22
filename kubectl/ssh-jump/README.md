@@ -34,6 +34,8 @@ Flags:
   -p, --port          : Target SSH Port. Default "22".
   -i, --identity-file : Target SSH identity file.
   -o, --ssh-opts      : SSH additional flags.
+  --cleanup           : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent".
+  --persistent        : Enable ssh-jump pod in persistent mode. This flag is mutually exclusive with "--cleanup".
 ```
 
 ## SSH'ing to the target node
