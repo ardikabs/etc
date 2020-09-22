@@ -13,7 +13,7 @@ NC='\033[0m'
 
 SSH_USERNAME=""
 SSH_PORT=""
-SSH_IDENTITY_FILE=""
+SSH_IDENTITY_FILE="-"
 SSH_OPTS=""
 DESTINATION_NODE=""
 
@@ -136,6 +136,39 @@ terminateSSHPod(){
     exit $EXIT
 }
 
+sshpod_manifest(){
+cat << EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    ssh-jump.k8s.ardikabs.com/temporary: "true"
+    ssh-jump.k8s.ardikabs.com/destination: "$DESTINATION_NODE"
+    ssh-jump.k8s.ardikabs.com/ssh-username: "$SSH_USERNAME"
+    ssh-jump.k8s.ardikabs.com/ssh-port: "$SSH_PORT"
+    ssh-jump.k8s.ardikabs.com/ssh-identity-file: "${SSH_IDENTITY_FILE}"
+  name: $1
+  namespace: default
+spec:
+  containers:
+  - name: ssh-jump
+    image: corbinu/ssh-server
+    ports:
+    - containerPort: 22
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+  restartPolicy: Never
+  tolerations:
+  - operator: Exists
+EOF
+}
+
 main(){
 
     parseFlags "$@"
@@ -145,7 +178,9 @@ main(){
 
     # Install a temporary SSH-server jumper
     echo "Creating SSH jump host (Pod)..."
-    kubectl run ${POD_NAME} -n default --image=corbinu/ssh-server --port=22 --restart=Never
+
+    sshpod_manifest $POD_NAME | kubectl apply -f -
+
     trap terminateSSHPod SIGINT SIGTERM
 
     # Wait until sshjump gets ready
