@@ -1,0 +1,4 @@
+# KOPS Provisioning
+This projects contain 2 kind of directories to provision Kubernetes cluster with [KOPS](https://kops.sigs.k8s.io/):
+1. [sandbox.project.ardikabs.k8s.local](./sandbox.project.ardikabs.k8s.local): No need AWS Route53, MUST be used `k8s.local` base domain, use [dns-gossip](https://github.com/kubernetes/kops/blob/master/docs/gossip.md), the dns propagation is not realtime (there is delay).
+1. [sandbox.project.ardikabs.internal](./sandbox.project.ardikabs.internal): Required AWS Route53, better use this method combined with using kube-apiserver for internal api ([reference](https://github.com/kubernetes/kops/blob/master/pkg/apis/kops/cluster.go#L372))

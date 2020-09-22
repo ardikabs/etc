@@ -1,0 +1,386 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  name: sandbox.project.ardikabs.internal
+spec:
+  kubernetesVersion: 1.15.12
+  cloudLabels:
+    Environment: sandbox
+    ManagedBy: kops
+
+  cloudProvider: aws
+  configBase: s3://<S3_KOPS_STATE>/sandbox.project.ardikabs.internal
+
+  # Since the VPC-related resource is provisioned by Terraform
+  # We need to disable tagging creation by KOPS on Subnet
+  # And Terraform must be aware with Subnet requirement within the KOPS such as tagging policy as follow:
+  # * kubernetes.io/cluster/<cluster-name>=shared (optional)
+  # * kubernetes.io/role/elb=1 (Mandatory)
+  # * kubernetes.io/role/internal-elb=1 (Mandatory)
+  # * SubnetType=Private/Utility (optional)
+  # Reference: https://kops.sigs.k8s.io/run_in_existing_vpc/
+  DisableSubnetTags: true
+
+  additionalPolicies:
+    node: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "autoscaling:DescribeAutoScalingGroups",
+            "autoscaling:DescribeAutoScalingInstances",
+            "autoscaling:DescribeTags",
+            "autoscaling:DescribeLaunchConfigurations",
+            "autoscaling:SetDesiredCapacity",
+            "autoscaling:TerminateInstanceInAutoScalingGroup"
+          ],
+          "Resource": "*"
+        }
+      ]
+
+  api:
+    loadBalancer:
+      type: Public
+      crossZoneLoadBalancing: true
+
+  topology:
+    dns:
+      type: Private
+    masters: private
+    nodes: private
+
+  docker:
+    version: 19.03.11
+    iptables: false
+
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+
+  authorization:
+    rbac: {}
+
+  # Need to enable `export KOPS_FEATURE_FLAGS=EnableNodeAuthorization`
+  nodeAuthorization:
+    nodeAuthorizer: {}
+
+  etcdClusters:
+  - cpuRequest: 200m
+    enableEtcdTLS: true
+    etcdMembers:
+    - encryptedVolume: true
+      instanceGroup: master-1
+      name: a
+    - encryptedVolume: true
+      instanceGroup: master-2
+      name: b
+    - encryptedVolume: true
+      instanceGroup: master-3
+      name: c
+    memoryRequest: 100Mi
+    name: main
+  - cpuRequest: 100m
+    enableEtcdTLS: true
+    etcdMembers:
+    - encryptedVolume: true
+      instanceGroup: master-1
+      name: a
+    - encryptedVolume: true
+      instanceGroup: master-2
+      name: b
+    - encryptedVolume: true
+      instanceGroup: master-3
+      name: c
+    memoryRequest: 100Mi
+    name: events
+
+# ----------------------
+# [BEGIN] Kubernetes Related
+# ----------------------
+  kubeAPIServer:
+    cloudProvider: aws
+    allowPrivileged: true
+    anonymousAuth: false
+    disableBasicAuth: true
+    apiServerCount: 3
+    authorizationMode: Node,RBAC
+    enableBootstrapTokenAuth: true
+    admissionControl:
+      - NodeRestriction
+      - NamespaceLifecycle
+      - LimitRanger
+      - ServiceAccount
+      - PersistentVolumeLabel
+      - DefaultStorageClass
+      - DefaultTolerationSeconds
+      - MutatingAdmissionWebhook
+      - ValidatingAdmissionWebhook
+      - ResourceQuota
+      - Priority
+    etcdServers:
+    - https://127.0.0.1:4001
+    etcdServersOverrides:
+    - /events#https://127.0.0.1:4002
+    insecurePort: 0
+    logLevel: 2
+    securePort: 443
+    serviceClusterIPRange: 100.96.0.0/16
+    storageBackend: etcd3
+    auditLogPath: /var/log/kube-apiserver-audit.log
+    auditLogMaxAge: 10
+    auditLogMaxBackups: 1
+    auditLogMaxSize: 100
+    auditPolicyFile: /srv/kubernetes/audit.yaml
+
+  kubeControllerManager:
+    cloudProvider: aws
+    controllers:
+    - "*"
+    - tokencleaner
+    clusterCIDR: 100.64.0.0/11
+    clusterName: sandbox.project.ardikabs.internal
+    leaderElection:
+      leaderElect: true
+    useServiceAccountCredentials: true
+    logLevel: 2
+
+  kubeDNS:
+    domain: cluster.local
+    cacheMaxConcurrent: 150
+    cacheMaxSize: 1000
+    cpuRequest: 100m
+    memoryLimit: 170Mi
+    memoryRequest: 70Mi
+    replicas: 2
+    serverIP: 100.96.0.10
+
+  kubeProxy:
+    clusterCIDR: 100.64.0.0/11
+    cpuRequest: 100m
+    logLevel: 2
+
+  kubelet:
+    anonymousAuth: false
+    authenticationTokenWebhook: true
+    authorizationMode: Webhook
+    clusterDNS: 100.96.0.10
+    clusterDomain: cluster.local
+    podManifestPath: /etc/kubernetes/manifests
+    logLevel: 2
+    kubeReserved:
+      cpu: "300m"
+      memory: "500Mi"
+    systemReserved:
+      cpu: "300m"
+      memory: "500Mi"
+    evictionHard: "memory.available<300Mi,imagefs.available<15%,nodefs.available<10%,nodefs.inodesFree<5%"
+
+  masterKubelet:
+    clusterDNS: 100.96.0.10
+    clusterDomain: cluster.local
+    podManifestPath: /etc/kubernetes/manifests
+    logLevel: 2
+    kubeReserved:
+      cpu: "300m"
+      memory: "500Mi"
+    systemReserved:
+      cpu: "300m"
+      memory: "500Mi"
+
+  fileAssets:
+    - name: health-monitor
+      path: /usr/local/bin/health-monitor.sh
+      roles: [Master,Node] # a list of roles to apply the asset to, zero defaults to all
+      content: |
+        #!/bin/bash
+        set -o nounset
+        set -o pipefail
+
+        KUBELET_RESTART=/tmp/kubelet-restart-count
+        DOCKER_RESTART=/tmp/docker-restart-count
+
+        [[ ! -e ${KUBELET_RESTART} ]] && echo "0" > ${KUBELET_RESTART}
+        [[ ! -e ${DOCKER_RESTART} ]] && echo "0" > ${DOCKER_RESTART}
+
+        function kubelet_restart(){
+          echo -e "Reason: $1"
+          echo "Kubelet is unhealthy!"
+          echo "Killing kubelet..."
+          pkill --signal 9 kubelet
+          sleep 5
+          echo "Re-starting kubelet.."
+          systemctl start kubelet
+          echo "$((`cat ${KUBELET_RESTART}` + 1))" > ${KUBELET_RESTART}
+          echo -e "Kubelet restart count: `cat ${KUBELET_RESTART}`"
+
+          sleep 120
+        }
+
+        function docker_monitoring {
+          while [ 1 ]; do
+            if ! timeout 60 docker ps > /dev/null; then
+              echo "Docker daemon failed!"
+              pkill --signal 9 docker
+              # Wait for a while, as we don't want to kill it again before it is really up.
+              sleep 120
+              systemctl start docker
+              echo "$((`cat ${DOCKER_RESTART}` + 1))" > ${DOCKER_RESTART}
+              echo -e "Docker restart count: `cat ${DOCKER_RESTART}`"
+
+            else
+              sleep "${SLEEP_SECONDS}"
+            fi
+          done
+        }
+
+        function kubelet_monitoring {
+          echo "Wait for 2 minutes for kubelet to be functional"
+          sleep 120
+          local -r max_seconds=20
+          local output=""
+          while [ 1 ]; do
+            if ! output=$(curl -m "${max_seconds}" -f -s -S http://127.0.0.1:10255/healthz 2>&1); then
+              # Print the response and/or errors.
+              kubelet_restart $output
+
+            elif output=$(journalctl -u kubelet -n50 | grep -m1 -o "use of closed network connection" 2>&1); then
+              kubelet_restart "Kubelet has caught 'use of closed network connection'"
+
+            else
+              sleep "${SLEEP_SECONDS}"
+            fi
+          done
+        }
+
+        ############## Main Function ################
+        if [[ "$#" -ne 1 ]]; then
+          echo "Usage: health-monitor.sh <docker/kubelet>"
+          exit 1
+        fi
+
+        SLEEP_SECONDS=30
+        case $1 in
+            docker)
+            docker_monitoring
+            ;;
+            kubelet)
+            kubelet_monitoring
+            ;;
+            *)
+            echo -e "Health monitoring for $1 is not yet supported"
+            ;;
+
+
+    - name: apiserver-audit-policy
+      path: /srv/kubernetes/audit.yaml
+      roles: [Master]
+      content: |
+        # Log all requests at the Metadata level.
+        apiVersion: audit.k8s.io/v1
+        kind: Policy
+        rules:
+        - level: Metadata
+
+  hooks:
+  - name: kubelet-monitor.service
+    roles: [Master,Node]
+    useRawManifest: true
+    manifest: |
+      [Unit]
+      Description=Kubernetes health monitoring for kubelet
+      After=docker.service kubelet.service
+
+      [Service]
+      Restart=always
+      RestartSec=10
+      RemainAfterExit=yes
+      ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
+      ExecStart=/usr/local/bin/health-monitor.sh kubelet
+
+      [Install]
+      WantedBy=multi-user.target
+  - name: docker-monitor.service
+    roles: [Master,Node]
+    useRawManifest: true
+    manifest: |
+      [Unit]
+      Description=Kubernetes health monitoring for docker
+      After=docker.service kubelet.service
+
+      [Service]
+      Restart=always
+      RestartSec=10
+      RemainAfterExit=yes
+      ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
+      ExecStart=/usr/local/bin/health-monitor.sh docker
+
+      [Install]
+      WantedBy=multi-user.target
+
+# ----------------------
+# [END] Kubernetes Related
+# ----------------------
+
+
+# ----------------------
+# [BEGIN] Networking related
+# ----------------------
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+
+  sshAccess:
+  - 10.0.0.0/16
+
+  networkID: vpc-3cb4a2135b28dec6a
+  networkCIDR: 10.0.0.0/16
+  serviceClusterIPRange: 100.96.0.0/16
+  nonMasqueradeCIDR: 100.64.0.0/10
+  networking:
+    calico:
+      mtu: 8912
+
+  subnets:
+  # Private for Main workload Private Subnet
+  - cidr: 10.0.96.0/19
+    id: subnet-0860fc54dc125b94c
+    name: ap-southeast-1a
+    type: Private
+    zone: ap-southeast-1a
+    egress: nat-010485215c9494367
+  - cidr: 10.0.128.0/19
+    id: subnet-0ffb20a7f10429639
+    name: ap-southeast-1b
+    type: Private
+    zone: ap-southeast-1b
+    egress: nat-0c3dc7f864260b57e
+  - cidr: 10.0.160.0/19
+    id: subnet-0ce4a37af4255e89a
+    name: ap-southeast-1c
+    type: Private
+    zone: ap-southeast-1c
+    egress: nat-07b8e530523910eec
+  # Private for Main workload Private Subnet
+
+  # Utility for Public Subnet external-elb
+  - cidr: 10.0.0.0/20
+    name: public-ap-southeast-1a
+    type: Utility
+    id: subnet-0ed6a2cee8c75f594
+    zone: ap-southeast-1a
+  - cidr: 10.0.16.0/20
+    name: public-ap-southeast-1b
+    type: Utility
+    zone: ap-southeast-1b
+    id: subnet-0843acceb135fe87e
+  - cidr: 10.0.32.0/20
+    name: public-ap-southeast-1c
+    type: Utility
+    zone: ap-southeast-1c
+    id: subnet-0c8508431f14d6e92
+  # Utility for Public Subnet external-elb
+
+# ----------------------
+# [END] Networking related
+# ----------------------
+
+

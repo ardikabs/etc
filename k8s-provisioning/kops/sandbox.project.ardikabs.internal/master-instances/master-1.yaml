@@ -1,0 +1,19 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: sandbox.project.ardikabs.internal
+  name: master-1
+spec:
+  cloudLabels:
+    ServiceName: kubernetes
+  image: ami-00716eccd722c53ad
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-1
+  role: Master
+  rootVolumeSize: 8
+  subnets:
+  - ap-southeast-1a
