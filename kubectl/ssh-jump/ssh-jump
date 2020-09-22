@@ -57,9 +57,9 @@ kind: Pod
 metadata:
   annotations:
     ssh-jump.k8s.ardikabs.com/persistent: "${PERSISTENT_MODE}"
-    ssh-jump.k8s.ardikabs.com/destination: "$DESTINATION_NODE"
-    ssh-jump.k8s.ardikabs.com/ssh-username: "$SSH_USERNAME"
-    ssh-jump.k8s.ardikabs.com/ssh-port: "$SSH_PORT"
+    ssh-jump.k8s.ardikabs.com/destination: "${DESTINATION_NODE}"
+    ssh-jump.k8s.ardikabs.com/ssh-username: "${SSH_USERNAME}"
+    ssh-jump.k8s.ardikabs.com/ssh-port: "${SSH_PORT}"
     ssh-jump.k8s.ardikabs.com/ssh-identity-file: "${SSH_IDENTITY_FILE}"
   name: $1
   namespace: default
@@ -191,12 +191,12 @@ main(){
 
     parseFlags "$@"
 
-    previous_pod_exist=$(kubectl get pod -n default -l app=ssh-jump,usage=jumper --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | head -n1)
+    existing_pod=$(kubectl get pod -n default -l app=ssh-jump,usage=jumper --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | head -n1)
 
-    if [[ -n ${previous_pod_exist} ]]; then
-        POD_NAME=$previous_pod_exist
+    if [[ -n ${existing_pod} ]]; then
+        POD_NAME=$existing_pod
 
-        echo "Use existing SSH jump host (${previous_pod_exist})"
+        echo "Use existing SSH jump host (${existing_pod})"
 
     else
         MAX_POD_CREATION_TIME=10
