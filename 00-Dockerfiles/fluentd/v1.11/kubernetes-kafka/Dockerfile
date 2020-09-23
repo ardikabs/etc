@@ -2,6 +2,7 @@ FROM fluent/fluentd:v1.11
 USER root
 RUN apk --no-cache --update add alpine-sdk ruby-dev \
     && fluent-gem install \
+        fluent-plugin-prometheus \
         fluent-plugin-multi-format-parser \
         fluent-plugin-concat \
         fluent-plugin-grok-parser \
