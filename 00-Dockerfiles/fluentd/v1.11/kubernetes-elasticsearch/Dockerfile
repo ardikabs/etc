@@ -8,6 +8,7 @@ RUN apk --no-cache --update add alpine-sdk ruby-dev \
         fluent-plugin-record-modifier \
         fluent-plugin-rewrite-tag-filter \
         fluent-plugin-json-in-json-2 \
+        fluent-plugin-multi-format-parser \
         fluent-plugin-kubernetes_metadata_filter \
         fluent-plugin-elasticsearch \
     && apk del alpine-sdk ruby-dev \
