@@ -179,7 +179,7 @@ terminateSSHPod(){
 
     kill -2 ${pid_port_forward} >/dev/null 2>&1
 
-    if [[ -n $CLEANUP ]] && [[ ${PERSISTENT_MODE} = "no" ]]; then
+    if [[ -n $POD_NAME ]] && [[ -n $CLEANUP ]] && [[ ${PERSISTENT_MODE} = "no" ]]; then
         echo ""
         echo -e "Terminating pod/${POD_NAME}"
         kubectl delete pod -l app=ssh-jump,usage=jumper -n default --force --grace-period=0  2> /dev/null
@@ -192,6 +192,7 @@ main(){
     parseFlags "$@"
 
     existing_pod=$(kubectl get pod -n default -l app=ssh-jump,usage=jumper --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | head -n1)
+    trap terminateSSHPod SIGINT SIGTERM
 
     if [[ -n ${existing_pod} ]]; then
         POD_NAME=$existing_pod
@@ -210,8 +211,6 @@ main(){
         fi
 
         sshpod_manifest $POD_NAME | kubectl apply -f -
-
-        trap terminateSSHPod SIGINT SIGTERM
 
         # Wait until sshjump gets ready
         c=1
