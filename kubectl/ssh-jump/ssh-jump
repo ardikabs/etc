@@ -17,10 +17,10 @@ SSH_IDENTITY_FILE="-"
 SSH_OPTS=""
 DESTINATION_NODE=""
 
+PERSISTENT_MODE=""
 CLEANUP=""
-PERSISTENT_MODE=no
 
-EXIT=0
+EXIT=1
 
 usage() {
 cat <<EOF
@@ -43,8 +43,8 @@ Flags:
   -p, --port          : Target SSH Port. Default "22".
   -i, --identity-file : Target SSH identity file.
   -o, --ssh-opts      : SSH additional flags.
-  --cleanup           : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent".
   --persistent        : Enable ssh-jump pod in persistent mode. This flag is mutually exclusive with "--cleanup".
+  --cleanup           : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then "--cleanup" will take precedence.
 EOF
 
 exit 0
@@ -151,7 +151,7 @@ parseFlags(){
             fi
             ;;
             --cleanup)
-            CLEANUP=true
+            CLEANUP=yes
             skip=1
             ;;
             --persistent)
@@ -175,19 +175,33 @@ parseFlags(){
     SSH_IDENTITY_FILE=${SSH_IDENTITY_FILE}
 }
 
+_terminate(){
+    echo ""
+    echo -e "Terminating pod/${POD_NAME}"
+    kubectl delete pod -l app=ssh-jump,usage=jumper -n default --force --grace-period=0  2> /dev/null
+    exit $EXIT
+}
+
 terminateSSHPod(){
 
     kill -2 ${pid_port_forward} >/dev/null 2>&1
 
-    if [[ -n $POD_NAME ]] && [[ -n $CLEANUP ]] && [[ ${PERSISTENT_MODE} = "no" ]]; then
-        echo ""
-        echo -e "Terminating pod/${POD_NAME}"
-        kubectl delete pod -l app=ssh-jump,usage=jumper -n default --force --grace-period=0  2> /dev/null
-        exit $EXIT
+    if [[ -n $POD_NAME ]]; then
+        if [[ -z ${CLEANUP} ]] && [[ -z ${PERSISTENT_MODE} ]]; then
+            _terminate
+        elif [[ ${CLEANUP} = "yes" ]]; then
+            _terminate
+        elif [[ $TIMEOUT = "yes" ]]; then
+            _terminate
+        fi
     fi
 }
 
 main(){
+    if [[ -z $SSH_AUTH_SOCK ]]; then
+        echo -e "${RED}ERROR${NC} Required \$SSH_AUTH_SOCK to be set"
+        exit 1
+    fi
 
     parseFlags "$@"
 
@@ -200,7 +214,7 @@ main(){
         echo "Use existing SSH jump host (${existing_pod})"
 
     else
-        MAX_POD_CREATION_TIME=10
+        MAX_POD_CREATION_TIME=${SSH_JUMP_TIMEOUT:-15}
         POD_NAME=sshjump-$(head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7 ; echo '')
 
         # Install a temporary SSH-server jumper
@@ -222,7 +236,7 @@ main(){
             (( c++ ))
             sleep 1
 
-            [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded while creating Pod ${POD_NAME}"; EXIT=1; terminateSSHPod; }
+            [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded (${MAX_POD_CREATION_TIME}s) while creating Pod ${POD_NAME}"; TIMEOUT=yes; terminateSSHPod;}
         done
     fi
 
@@ -238,10 +252,22 @@ main(){
 
     sleep 5
 
+    output=$(ssh-add -L 2>/dev/null)
+    if [[ $output = "The agent has no identities." ]];
+    then
+        # Create a temporary ssh-key to ssh'ing into ssh-jump pod
+        if [[ ! -f /tmp/${POD_NAME} ]]; then
+            ssh-keygen -b 2048 -t rsa -f /tmp/${POD_NAME} -N '' -C "ssh-jump:temporary" >/dev/null 2>&1
+        fi
+        ssh-add -t 30 -K /tmp/${POD_NAME} >/dev/null 2>&1
+    fi
+
     ssh-add -L | kubectl exec -i ${POD_NAME} -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
 
-    ssh $DESTINATION_NODE $SSH_IDENTITY_FILE \
-        -l ${SSH_USERNAME} -p ${SSH_PORT} \
+    ssh $DESTINATION_NODE \
+        $SSH_IDENTITY_FILE \
+        -l ${SSH_USERNAME} \
+        -p ${SSH_PORT} \
         ${SSH_OPTS} \
         -o ForwardAgent=yes \
         -o ServerAliveInterval=60s \
@@ -249,6 +275,7 @@ main(){
         -o UserKnownHostsFile=/dev/null \
         -o ProxyCommand="ssh -q -W %h:%p root@127.0.0.1 -p ${RANDOM_PORT_FORWARDING}"
 
+    EXIT=0
     terminateSSHPod
 }
 
