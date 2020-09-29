@@ -29,13 +29,13 @@ Examples:
     ssh-jump ip-10-0-10-217.ap-southeast-1.compute.internal
 
 Flags:
-  -h, --help          : show this message
-  -u, --username      : Target SSH username. Default "centos".
-  -p, --port          : Target SSH Port. Default "22".
-  -i, --identity-file : Target SSH identity file.
-  -o, --ssh-opts      : SSH additional flags.
-  --persistent        : Enable ssh-jump pod in persistent mode. This flag is mutually exclusive with "--cleanup".
-  --cleanup           : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then `--cleanup` will take precedence.
+  -h, --help           : show this message
+  -u, --username       : Target SSH username. Default "centos".
+  -p, --port           : Target SSH Port. Default "22".
+  -i, --identity-file  : Target SSH identity file.
+  -o, --ssh-opts       : SSH additional flags.
+  -P, --persistent     : Enable and/or use persistent ssh-jump pod. This flag is mutually exclusive with "--cleanup".
+  --cleanup            : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then this flag will take precedence.
 ```
 
 ## SSH'ing to the target node
@@ -54,7 +54,6 @@ Last login: Mon Jul 27 03:06:36 2020 from ip-10-0-10-211.ap-southeast-1.compute.
 .
 [centos@ip-10-0-30-61 ~]$ logout
 Connection to ip-10-0-30-61.ap-southeast-1.compute.internal closed.
-Terminating pod/sshjump-z80ursw
 pod "sshjump-z80ursw" force deleted
 ```
 
@@ -77,7 +76,7 @@ Connection to ip-10-0-30-61.ap-southeast-1.compute.internal closed.
 
 # Try it again
 # You will using existing ssh-jump as a jumper
-$ ssh-jump -i /path/to/ssh-private-key.pem ip-10-0-30-61.ap-southeast-1.compute.internal
+$ ssh-jump --persistent -i /path/to/ssh-private-key.pem ip-10-0-30-61.ap-southeast-1.compute.internal
 Use existing SSH jump host (sshjump-z80ursw)
 Forwarding from 127.0.0.1:50183 -> 22
 Forwarding from [::1]:50183 -> 22
@@ -105,6 +104,7 @@ Last login: Mon Jul 27 03:06:36 2020 from ip-10-0-10-211.ap-southeast-1.compute.
 .
 [centos@ip-10-0-30-61 ~]$ logout
 Connection to ip-10-0-30-61.ap-southeast-1.compute.internal closed.
-Terminating pod/sshjump-z80ursw
+
+Terminating ssh-jump Pods if any
 pod "sshjump-z80ursw" force deleted
 ```

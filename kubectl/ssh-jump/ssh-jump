@@ -17,7 +17,7 @@ SSH_IDENTITY_FILE="-"
 SSH_OPTS=""
 DESTINATION_NODE=""
 
-PERSISTENT_MODE=""
+PERSISTENT="no"
 CLEANUP=""
 
 EXIT=1
@@ -38,13 +38,13 @@ Examples:
     ssh-jump ip-10-0-10-217.ap-southeast-1.compute.internal
 
 Flags:
-  -h, --help          : show this message
-  -u, --username      : Target SSH username. Default "centos".
-  -p, --port          : Target SSH Port. Default "22".
-  -i, --identity-file : Target SSH identity file.
-  -o, --ssh-opts      : SSH additional flags.
-  --persistent        : Enable ssh-jump pod in persistent mode. This flag is mutually exclusive with "--cleanup".
-  --cleanup           : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then "--cleanup" will take precedence.
+  -h, --help           : show this message
+  -u, --username       : Target SSH username. Default "centos".
+  -p, --port           : Target SSH Port. Default "22".
+  -i, --identity-file  : Target SSH identity file.
+  -o, --ssh-opts       : SSH additional flags.
+  -P, --persistent     : Enable and/or use persistent ssh-jump pod. This flag is mutually exclusive with "--cleanup".
+  --cleanup            : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then this flag will take precedence.
 EOF
 
 exit 0
@@ -56,12 +56,13 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    ssh-jump.k8s.ardikabs.com/persistent: "${PERSISTENT_MODE:-no}"
+    ssh-jump.k8s.ardikabs.com/persistent: "${PERSISTENT}"
   name: $1
   namespace: default
   labels:
     app: ssh-jump
     usage: jumper
+    persistent: "${PERSISTENT}"
 spec:
   containers:
   - name: ssh-jump
@@ -150,8 +151,8 @@ parseFlags(){
             CLEANUP=yes
             skip=1
             ;;
-            --persistent)
-            PERSISTENT_MODE=yes
+            -P|--persistent)
+            PERSISTENT=yes
             skip=1
             ;;
         esac
@@ -171,26 +172,55 @@ parseFlags(){
     SSH_IDENTITY_FILE=${SSH_IDENTITY_FILE}
 }
 
-_terminate(){
-    echo ""
-    echo -e "Terminating pod/${POD_NAME}"
-    kubectl delete pod -l app=ssh-jump,usage=jumper -n default --force --grace-period=0  2> /dev/null
-    exit $EXIT
+_kubectl_delete(){
+    eval "kubectl delete pod $@ -n default --force --grace-period=0  2> /dev/null"
 }
 
 terminateSSHPod(){
 
     kill -2 ${pid_port_forward} >/dev/null 2>&1
 
-    if [[ -n $POD_NAME ]]; then
-        if [[ -z ${CLEANUP} ]] && [[ -z ${PERSISTENT_MODE} ]]; then
-            _terminate
-        elif [[ ${CLEANUP} = "yes" ]]; then
-            _terminate
-        elif [[ $TIMEOUT = "yes" ]]; then
-            _terminate
-        fi
+    if [[ $TIMEOUT = "yes" ]]; then
+        _kubectl_delete ${POD_NAME}
+    elif [[ ${CLEANUP} = "yes" ]]; then
+        echo ""
+        echo -e "Terminating ssh-jump Pods if any"
+        _kubectl_delete -l app=ssh-jump,usage=jumper
+    elif [[ ${PERSISTENT} = "no" ]]; then
+        _kubectl_delete -l app=ssh-jump,usage=jumper,persistent=no
     fi
+
+    exit $EXIT
+}
+
+provision_pod(){
+    MAX_POD_CREATION_TIME=${SSH_JUMP_TIMEOUT:-15}
+
+    pod_suffix=$(head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7 ; echo '')
+    POD_NAME=sshjump-$pod_suffix
+
+    # Install a temporary SSH-server jumper
+    if [[ $PERSISTENT = "yes" ]]; then
+        echo "Creating persistent SSH jump host (Pod)..."
+    else
+        echo "Creating SSH jump host (Pod)..."
+    fi
+
+    sshpod_manifest $POD_NAME | kubectl apply -f -
+    trap terminateSSHPod SIGINT SIGTERM
+
+    # Wait until sshjump gets ready
+    c=1
+    while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
+    do
+        pod_status=$(kubectl get pod ${POD_NAME} -n default --no-headers -ocustom-columns=STATUS:.status.phase 2>/dev/null | head -n1)
+        [ "${pod_status}" = "Running" ] && break
+
+        (( c++ ))
+        sleep 1
+
+        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded (${MAX_POD_CREATION_TIME}s) while creating Pod ${POD_NAME}"; TIMEOUT=yes; terminateSSHPod;}
+    done
 }
 
 main(){
@@ -201,39 +231,16 @@ main(){
 
     parseFlags "$@"
 
-    existing_pod=$(kubectl get pod -n default -l app=ssh-jump,usage=jumper --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | head -n1)
-    trap terminateSSHPod SIGINT SIGTERM
+    if [[ ${PERSISTENT} = "yes" ]]; then
+        POD_NAME=$(kubectl get pod -n default -l app=ssh-jump,usage=jumper,persistent=yes --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | head -n1)
 
-    if [[ -n ${existing_pod} ]]; then
-        POD_NAME=$existing_pod
-
-        echo "Use existing SSH jump host (${existing_pod})"
-
-    else
-        MAX_POD_CREATION_TIME=${SSH_JUMP_TIMEOUT:-15}
-        POD_NAME=sshjump-$(head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7 ; echo '')
-
-        # Install a temporary SSH-server jumper
-        if [[ $PERSISTENT_MODE = "yes" ]]; then
-            echo "Creating persistent SSH jump host (Pod)..."
+        if [[ -z $POD_NAME ]]; then
+            provision_pod
         else
-            echo "Creating SSH jump host (Pod)..."
+            echo "Use existing SSH jump host (${POD_NAME})"
         fi
-
-        sshpod_manifest $POD_NAME | kubectl apply -f -
-
-        # Wait until sshjump gets ready
-        c=1
-        while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
-        do
-            pod_status=$(kubectl get pod ${POD_NAME} -n default --no-headers -ocustom-columns=STATUS:.status.phase 2>/dev/null | head -n1)
-            [ "${pod_status}" = "Running" ] && break
-
-            (( c++ ))
-            sleep 1
-
-            [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded (${MAX_POD_CREATION_TIME}s) while creating Pod ${POD_NAME}"; TIMEOUT=yes; terminateSSHPod;}
-        done
+    else
+        provision_pod
     fi
 
     # Setup portforward
