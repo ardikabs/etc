@@ -140,10 +140,10 @@ parseFlags(){
             -o=*|--ssh-opts=*|-o|--ssh-opts)
             if [[ "${arg#*=}" =~ ^- ]];
             then
-                SSH_OPTS="-i $2"
+                SSH_OPTS="$2"
                 skip=2
             else
-                SSH_OPTS="-i ${arg#*=}"
+                SSH_OPTS="${arg#*=}"
                 skip=1
             fi
             ;;
