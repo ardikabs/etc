@@ -1,0 +1,4 @@
+ansible==2.9.13
+boto3==1.15.8
+cryptography==2.1.4
+netaddr==0.8.0

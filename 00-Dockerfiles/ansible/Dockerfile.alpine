@@ -1,0 +1,28 @@
+FROM python:3.7-alpine
+
+WORKDIR /app
+COPY requirements.txt .
+
+RUN apk add --no-cache --update \
+        sudo \
+        rsync \
+        wget \
+        curl \
+        git \
+        make \
+        openssh-client \
+        ca-certificates
+RUN apk add --no-cache --update \
+        --virtual build-dependencies \
+        alpine-sdk \
+        gcc \
+        musl-dev \
+        libffi-dev \
+        openssl-dev \
+        python3-dev \
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apk del build-dependencies \
+    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+
+CMD ["ansible"]
