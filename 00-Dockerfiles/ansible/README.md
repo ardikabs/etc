@@ -1,12 +1,24 @@
 # docker ansible image
-This ansible image has several package, as follow:
-1. boto3
-2. cryptography
-3. netaddr
-4. sudo
-5. wget
-6. curl
-7. git
-8. openssh-client
-9. rsync
-10. make
+### Common packages (Stretch)
+* sudo
+* wget
+* curl
+* git
+* openssh-client
+* rsync
+* make
+* s3cmd
+
+### Common packages (Alpine)
+* sudo
+* wget
+* curl
+* git
+* openssh-client
+* rsync
+* make
+
+### Python packages
+* boto3
+* cryptography
+* netaddr
