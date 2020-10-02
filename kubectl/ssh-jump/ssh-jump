@@ -260,9 +260,10 @@ main(){
     then
         # Create a temporary ssh-key to ssh'ing into ssh-jump pod
         if [[ ! -f /tmp/${POD_NAME} ]]; then
-            ssh-keygen -b 2048 -t rsa -f /tmp/${POD_NAME} -N '' -C "ssh-jump:temporary" >/dev/null 2>&1
+            mkdir -p /tmp/.ssh-jump
+            ssh-keygen -b 2048 -t rsa -f /tmp/.ssh-jump/${POD_NAME} -N '' -C "ssh-jump:temporary" >/dev/null 2>&1
         fi
-        ssh-add -t 30 -K /tmp/${POD_NAME} >/dev/null 2>&1
+        ssh-add -t 30 -k /tmp/.ssh-jump/${POD_NAME} >/dev/null 2>&1
     fi
 
     ssh-add -L | kubectl exec -i ${POD_NAME} -n default -- /bin/bash -c "cat > /root/.ssh/authorized_keys"
