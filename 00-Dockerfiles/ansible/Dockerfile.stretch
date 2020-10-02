@@ -13,6 +13,7 @@ RUN apt update -y \
         curl \
         git \
         make \
+        s3cmd \
         openssh-client \
         ca-certificates
 RUN apt update -y \
