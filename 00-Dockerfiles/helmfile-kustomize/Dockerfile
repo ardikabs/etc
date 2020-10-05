@@ -21,4 +21,5 @@ RUN apk add --no-cache \
     && wget -q https://github.com/roboll/helmfile/releases/download/${HELMFILE_VERSION}/helmfile_linux_amd64 -O /usr/local/bin/helmfile \
     && wget -q https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz -O - | tar -xzO kustomize > /usr/local/bin/kustomize \
     && bash -c "chmod +x /usr/local/bin/{kubectl,helm,helmfile,kustomize}" \
-    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* \
+    && helm plugin install https://github.com/databus23/helm-diff
