@@ -5,8 +5,8 @@ ENV DEBIAN_FRONTEND noninteractive
 WORKDIR /app
 COPY requirements.txt .
 
-RUN apt update -y \
-    && apt install -y -f --no-install-recommends \
+RUN apt update -y && \
+    apt install -y -f --no-install-recommends \
         sudo \
         rsync \
         wget \
@@ -16,24 +16,24 @@ RUN apt update -y \
         s3cmd \
         openssh-client \
         ca-certificates
-RUN apt update -y \
-    && apt install -y -f --no-install-recommends \
+RUN apt update -y && \
+    apt install -y -f --no-install-recommends \
         build-essential \
         gcc \
         musl-dev \
         libssl-dev \
         libffi-dev \
-        python3-dev \
-    && pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt remove -y --purge --auto-remove \
+        python3-dev && \
+    pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt remove -y --purge --auto-remove \
         build-essential \
         gcc \
         musl-dev \
         libssl-dev \
         libffi-dev \
-        python3-dev \
-    && apt autoremove \
-    && rm -Rf /tmp/* /var/tmp/* /var/lib/apt/lists/* /usr/share/doc /usr/share/man
+        python3-dev && \
+    apt autoremove && \
+    rm -Rf /tmp/* /var/tmp/* /var/lib/apt/lists/* /usr/share/doc /usr/share/man
 
 CMD ["ansible"]

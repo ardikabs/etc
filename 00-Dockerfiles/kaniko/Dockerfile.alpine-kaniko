@@ -3,11 +3,7 @@ COPY dockerconfig.json /kaniko/.docker/config.json
 
 FROM alpine:latest
 RUN apk update && \
-    apk add --no-cache \
-    bash \
-    git \
-    curl \
-    ca-certificates
+    apk add --no-cache bash git curl ca-certificates
 
 COPY --from=kaniko /kaniko/executor /kaniko/
 COPY --from=kaniko /kaniko/docker-credential-acr /kaniko/

@@ -20,20 +20,29 @@ mkdir -p /opt/shared
 # located in the `bin/*` and `shared/*` respectively.
 # You could be set up by up to your preference
 
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/53/jobs/artifacts/master/download?job=common-scripts" -o $tempdir/common-scripts.zip || { echo -e "${RED}Something goes wrong when try to download the common-scripts.${NC}\nPlease contact the administrator @team, exiting."; exit 1; }
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/54/jobs/artifacts/master/download?job=ci-scripts" -o $tempdir/ci-scripts.zip || { echo -e "${RED}Something goes wrong when try to download the ci-scripts.${NC}\nPlease contact the administrator @team, exiting."; exit 1; }
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/55/jobs/artifacts/master/download?job=deployment-scripts" -o $tempdir/deployment-scripts.zip || { echo -e "${RED}Something goes wrong when try to download the deployment-scripts.${NC}\nPlease contact the administrator @team, exiting."; exit 1; }
+curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/53/jobs/artifacts/master/download?job=common-scripts" -o "$tempdir/common-scripts.zip" || {
+    echo -e "${RED}Something goes wrong when try to download the common-scripts.${NC}\nPlease contact the administrator @team, exiting."
+    exit 1
+}
+curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/54/jobs/artifacts/master/download?job=ci-scripts" -o "$tempdir/ci-scripts.zip" || {
+    echo -e "${RED}Something goes wrong when try to download the ci-scripts.${NC}\nPlease contact the administrator @team, exiting."
+    exit 1
+}
+curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/55/jobs/artifacts/master/download?job=deployment-scripts" -o "$tempdir/deployment-scripts.zip" || {
+    echo -e "${RED}Something goes wrong when try to download the deployment-scripts.${NC}\nPlease contact the administrator @team, exiting."
+    exit 1
+}
 
-unzip -qq -o $tempdir/common-scripts.zip -d $tempdir/common-scripts
-mv $tempdir/common-scripts/bin/* /usr/local/bin/
-mv $tempdir/common-scripts/shared/* /opt/shared
+unzip -qq -o "$tempdir/common-scripts.zip" -d "$tempdir/common-scripts"
+mv "$tempdir/common-scripts/bin/*" /usr/local/bin/
+mv "$tempdir/common-scripts/shared/*" /opt/shared
 
-unzip -qq -o $tempdir/ci-scripts.zip -d $tempdir/ci-scripts
-mv $tempdir/ci-scripts/bin/* /usr/local/bin/
-mv $tempdir/ci-scripts/shared/* /opt/shared
+unzip -qq -o "$tempdir/ci-scripts.zip" -d "$tempdir/ci-scripts"
+mv "$tempdir/ci-scripts/bin/*" /usr/local/bin/
+mv "$tempdir/ci-scripts/shared/*" /opt/shared
 
-unzip -qq -o $tempdir/deployment-scripts.zip -d $tempdir/deployment-scripts
-mv $tempdir/deployment-scripts/bin/* /usr/local/bin/
-mv $tempdir/deployment-scripts/shared/* /opt/shared/
+unzip -qq -o "$tempdir/deployment-scripts.zip" -d "$tempdir/deployment-scripts"
+mv "$tempdir/deployment-scripts/bin/*" /usr/local/bin/
+mv "$tempdir/deployment-scripts/shared/*" /opt/shared/
 
-exec /bin/bash $@
+exec /bin/bash "$@"

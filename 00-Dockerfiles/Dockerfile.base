@@ -8,15 +8,13 @@ ENV BASH_ENV "/etc/profile"
 ADD scripts/ /root/xscripts/
 ADD run /root/.run-me
 
-RUN apt update -y \
-    && apt install --no-install-recommends -y \
+RUN apt update -y && \
+    apt install --no-install-recommends -y \
         wget \
         unzip \
         direnv \
-        ca-certificates \
-    && wget https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh -O ~/.bash-preexec.sh \
-    && echo '[[ -f ~/.bash-preexec.sh ]] source ~/.bash-preexec.sh source ~/.run-me' >> /etc/profile \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -Rf /usr/share/doc \
-    && rm -Rf /usr/share/man \
-    && apt-get clean
+        ca-certificates && \
+    wget https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh -O ~/.bash-preexec.sh && \
+    echo '[[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh && source ~/.run-me' >> /etc/profile && \
+    rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man && \
+    apt-get clean

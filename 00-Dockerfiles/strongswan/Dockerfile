@@ -1,7 +1,7 @@
 FROM alpine
 
-RUN apk update \
-    && apk add --no-cache \
+RUN apk update && \
+    apk add --no-cache \
         curl \
         strongswan \
         ca-certificates

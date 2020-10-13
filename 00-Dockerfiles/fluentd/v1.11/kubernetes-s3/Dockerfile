@@ -1,7 +1,7 @@
 FROM fluent/fluentd:v1.11
 USER root
-RUN apk --no-cache --update add alpine-sdk ruby-dev \
-    && fluent-gem install \
+RUN apk add --no-cache --update --virtual build-dependencies alpine-sdk ruby-dev && \
+    fluent-gem install \
         fluent-plugin-prometheus \
         fluent-plugin-multi-format-parser \
         fluent-plugin-concat \
@@ -10,6 +10,6 @@ RUN apk --no-cache --update add alpine-sdk ruby-dev \
         fluent-plugin-rewrite-tag-filter \
         fluent-plugin-json-in-json-2 \
         fluent-plugin-kubernetes_metadata_filter \
-        fluent-plugin-s3 \
-    && apk del alpine-sdk ruby-dev \
-    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+        fluent-plugin-s3 && \
+    apk del build-dependencies && \
+    rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
