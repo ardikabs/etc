@@ -23,7 +23,7 @@ CLEANUP=""
 EXIT=1
 
 usage() {
-cat <<EOF
+    cat <<EOF
 ssh-jump is a command line tool for ssh'ing to an instance under kubernetes host private networks
 
 Usage:
@@ -47,11 +47,11 @@ Flags:
   --cleanup            : Clean up ssh-jump if any. This flag is mutually exclusive with "--persistent". If both are specified, then this flag will take precedence.
 EOF
 
-exit 0
+    exit 0
 }
 
-sshpod_manifest(){
-cat << EOF
+sshpod_manifest() {
+    cat <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
@@ -83,7 +83,7 @@ spec:
 EOF
 }
 
-showErr(){
+showErr() {
     errMessage=$1
 
     echo -e "${RED}ERROR${NC} $errMessage"
@@ -91,7 +91,7 @@ showErr(){
     exit 1
 }
 
-parseFlags(){
+parseFlags() {
 
     if [[ "$#" -eq 0 ]]; then
         usage
@@ -100,16 +100,14 @@ parseFlags(){
     fi
 
     # Parsing flags
-    for arg in "$@"
-    do
+    for arg in "$@"; do
         skip=0
         case $arg in
-            -h|--help)
+        -h | --help)
             usage
             ;;
-            -u=*|--username=*|-u|--username)
-            if [[ "${arg#*=}" =~ ^- ]];
-            then
+        -u=* | --username=* | -u | --username)
+            if [[ "${arg#*=}" =~ ^- ]]; then
                 SSH_USERNAME="$2"
                 skip=2
             else
@@ -117,9 +115,8 @@ parseFlags(){
                 skip=1
             fi
             ;;
-            -p=*|--port=*|-p|--port)
-            if [[ "${arg#*=}" =~ ^- ]];
-            then
+        -p=* | --port=* | -p | --port)
+            if [[ "${arg#*=}" =~ ^- ]]; then
                 SSH_PORT="$2"
                 skip=2
             else
@@ -127,9 +124,8 @@ parseFlags(){
                 skip=1
             fi
             ;;
-            -i=*|--identity-file=*|-i|--identity-file)
-            if [[ "${arg#*=}" =~ ^- ]];
-            then
+        -i=* | --identity-file=* | -i | --identity-file)
+            if [[ "${arg#*=}" =~ ^- ]]; then
                 SSH_IDENTITY_FILE="-i $2"
                 skip=2
             else
@@ -137,9 +133,8 @@ parseFlags(){
                 skip=1
             fi
             ;;
-            -o=*|--ssh-opts=*|-o|--ssh-opts)
-            if [[ "${arg#*=}" =~ ^- ]];
-            then
+        -o=* | --ssh-opts=* | -o | --ssh-opts)
+            if [[ "${arg#*=}" =~ ^- ]]; then
                 SSH_OPTS="$2"
                 skip=2
             else
@@ -147,11 +142,11 @@ parseFlags(){
                 skip=1
             fi
             ;;
-            --cleanup)
+        --cleanup)
             CLEANUP=yes
             skip=1
             ;;
-            -P|--persistent)
+        -P | --persistent)
             PERSISTENT=yes
             skip=1
             ;;
@@ -172,11 +167,11 @@ parseFlags(){
     SSH_IDENTITY_FILE=${SSH_IDENTITY_FILE}
 }
 
-_kubectl_delete(){
+_kubectl_delete() {
     eval "kubectl delete pod $* -n default --force --grace-period=0  2> /dev/null"
 }
 
-terminateSSHPod(){
+terminateSSHPod() {
 
     kill -2 "${pid_port_forward}" >/dev/null 2>&1
 
@@ -193,10 +188,13 @@ terminateSSHPod(){
     exit $EXIT
 }
 
-provision_pod(){
+provision_pod() {
     MAX_POD_CREATION_TIME=${SSH_JUMP_TIMEOUT:-15}
 
-    pod_suffix=$(head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7 ; echo '')
+    pod_suffix=$(
+        head /dev/urandom | LC_ALL=C tr -dc a-z0-9 | head -c 7
+        echo ''
+    )
     POD_NAME=sshjump-$pod_suffix
 
     # Install a temporary SSH-server jumper
@@ -211,19 +209,23 @@ provision_pod(){
 
     # Wait until sshjump gets ready
     c=1
-    while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]];
-    do
+    while [[ ${c} -le ${MAX_POD_CREATION_TIME} ]]; do
         pod_status=$(kubectl get pod "${POD_NAME}" -n default --no-headers -ocustom-columns=STATUS:.status.phase 2>/dev/null | head -n1)
         [ "${pod_status}" = "Running" ] && break
 
-        (( c++ ))
+        ((c++))
         sleep 1
 
-        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && { echo ""; echo -e "${RED}ERROR:${NC} Timeout exceeded (${MAX_POD_CREATION_TIME}s) while creating Pod ${POD_NAME}"; TIMEOUT=yes; terminateSSHPod;}
+        [[ ${c} -gt ${MAX_POD_CREATION_TIME} ]] && {
+            echo ""
+            echo -e "${RED}Error:${NC} Timeout exceeded (${MAX_POD_CREATION_TIME}s) while creating Pod ${POD_NAME}"
+            TIMEOUT=yes
+            terminateSSHPod
+        }
     done
 }
 
-main(){
+main() {
     if [[ -z $SSH_AUTH_SOCK ]]; then
         echo -e "${RED}ERROR${NC} Required \$SSH_AUTH_SOCK to be set"
         exit 1
@@ -256,8 +258,7 @@ main(){
     sleep 5
 
     output=$(ssh-add -L 2>/dev/null)
-    if [[ $output = "The agent has no identities." ]];
-    then
+    if [[ $output = "The agent has no identities." ]]; then
         # Create a temporary ssh-key to ssh'ing into ssh-jump pod
         if [[ ! -f /tmp/${POD_NAME} ]]; then
             mkdir -p /tmp/.ssh-jump
