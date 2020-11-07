@@ -27,5 +27,4 @@ RUN apk add --no-cache \
     wget -q https://github.com/mozilla/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux -O /usr/local/bin/sops && \
     bash -c "chmod +x /usr/local/bin/{kubectl,helm,helmfile,kustomize}" && \
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/* && \
-    helm plugin install https://github.com/databus23/helm-diff --version v3.1.3 && \
-    helm plugin install https://github.com/zendesk/helm-secrets --version v2.0.2
+    helm plugin install https://github.com/databus23/helm-diff --version v3.1.3
