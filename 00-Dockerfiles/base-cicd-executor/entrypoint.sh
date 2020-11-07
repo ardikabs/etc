@@ -9,40 +9,49 @@ set -euo pipefail
 RED='\033[1;31m'
 NC='\033[0m'
 
-tempdir=$(mktemp -d)
+GITLAB_URL="https://gitlab.com"
+TEMPDIR=$(mktemp -d)
+
 mkdir -p /opt/shared
+
+function gitlab_download_artifact() {
+    ref=$1
+    job=$2
+    curl -sSfL -H "JOB-TOKEN: $CI_JOB_TOKEN" "$GITLAB_URL/api/v4/projects/53/jobs/artifacts/$ref/download?job=$job" -o "$TEMPDIR/$job.zip" || {
+        echo -e "${RED}Something goes wrong when try to download the common-scripts.${NC}\nPlease contact the administrator @team, exiting."
+        exit 1
+    }
+
+    unzip -qq -o "$TEMPDIR/$job.zip" -d "$TEMPDIR/$job"
+    mv "$TEMPDIR/$job"/bin/* /usr/local/bin/ || true
+    mv "$TEMPDIR/$job"/shared/* /opt/shared || true
+}
 
 # --------------
 # Download external dependencies
 # --------------
+# As a starter script in our CI/CD box, we need to set apart between the box and the scripts
+# As seen on the below example, there is 2 use case for CI/CD using GitlabCI and CI/CD with GitHub repository as scm
+# Both use case provide the convention which `/bin/*` directory stored the scripts either a script or a binary
+# and `shared/*` directory stored shared file that could be used for other script
 
-# Downloaded content is a zipped file, it contains binary files and shared files
-# located in the `bin/*` and `shared/*` respectively.
-# You could be set up by up to your preference
+# 1. Example use case for CI/CD using GitlabCI, utilize GitlabCI artifact
 
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/53/jobs/artifacts/master/download?job=common-scripts" -o "$tempdir/common-scripts.zip" || {
+curl -sSfL -H "JOB-TOKEN: $CI_JOB_TOKEN" "$GITLAB_URL/api/v4/projects/53/jobs/artifacts/master/download?job=ci-scripts" -o "$TEMPDIR"/ci-scripts.zip || {
     echo -e "${RED}Something goes wrong when try to download the common-scripts.${NC}\nPlease contact the administrator @team, exiting."
     exit 1
 }
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/54/jobs/artifacts/master/download?job=ci-scripts" -o "$tempdir/ci-scripts.zip" || {
-    echo -e "${RED}Something goes wrong when try to download the ci-scripts.${NC}\nPlease contact the administrator @team, exiting."
-    exit 1
-}
-curl -sSfL -H "PRIVATE-TOKEN: TKC5SnKKvc5nRwSqrE6E" "https://gitlab.com/api/v4/projects/55/jobs/artifacts/master/download?job=deployment-scripts" -o "$tempdir/deployment-scripts.zip" || {
-    echo -e "${RED}Something goes wrong when try to download the deployment-scripts.${NC}\nPlease contact the administrator @team, exiting."
-    exit 1
-}
 
-unzip -qq -o "$tempdir/common-scripts.zip" -d "$tempdir/common-scripts"
-mv "$tempdir/common-scripts/bin/*" /usr/local/bin/
-mv "$tempdir/common-scripts/shared/*" /opt/shared
+unzip -qq -o "$TEMPDIR"/ci-scripts.zip -d "$TEMPDIR"/ci-scripts
+mv "$TEMPDIR"/ci-scripts/bin/* /usr/local/bin/ || true
+mv "$TEMPDIR"/ci-scripts/shared/* /opt/shared || true
 
-unzip -qq -o "$tempdir/ci-scripts.zip" -d "$tempdir/ci-scripts"
-mv "$tempdir/ci-scripts/bin/*" /usr/local/bin/
-mv "$tempdir/ci-scripts/shared/*" /opt/shared
+# 2. Example use case CI/CD with GitHub repository
 
-unzip -qq -o "$tempdir/deployment-scripts.zip" -d "$tempdir/deployment-scripts"
-mv "$tempdir/deployment-scripts/bin/*" /usr/local/bin/
-mv "$tempdir/deployment-scripts/shared/*" /opt/shared/
+git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+git clone -b master https://github.com/<username>/pipelines "$TEMPDIR"
+mv "$TEMPDIR"/bin /usr/local/bin || true
+mv "$TEMPDIR"/shared /opt/shared || true
 
-exec /bin/bash "$@"
+rm -rf "$TEMPDIR"
+/bin/bash -c "$@"

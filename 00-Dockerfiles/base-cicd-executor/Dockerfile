@@ -2,10 +2,13 @@ FROM debian:stretch-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD entrypoint.sh /usr/local/bin/entrypoint.base
+ENV PATH="$PATH:/usr/local/bin:/opt/shared"
+ADD entrypoint.sh /bin/entrypoint.sh
 
 RUN apt update -y && \
     apt install -y -f --no-install-recommends \
+        sudo \
+        bash \
         git \
         wget \
         curl \
@@ -16,4 +19,4 @@ RUN apt update -y && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man && \
     apt-get clean
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.base"]
+ENTRYPOINT ["/bin/entrypoint.sh"]
