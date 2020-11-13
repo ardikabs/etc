@@ -270,7 +270,6 @@ spec:
             echo -e "Health monitoring for $1 is not yet supported"
             ;;
 
-
     - name: apiserver-audit-policy
       path: /srv/kubernetes/audit.yaml
       roles: [Master]
@@ -280,6 +279,14 @@ spec:
         kind: Policy
         rules:
         - level: Metadata
+
+    - name: provision-journald-script
+      path: /bin/provision-journald.sh
+      roles: [Master,Node]
+      content: |-
+        #!/bin/bash
+        mkdir -p /var/log/journal
+        sed -i -e "s|#SystemMaxUse=|SystemMaxUse=2G|g" /etc/systemd/journald.conf
 
   hooks:
   - name: kubelet-monitor.service
@@ -299,6 +306,7 @@ spec:
 
       [Install]
       WantedBy=multi-user.target
+
   - name: docker-monitor.service
     roles: [Master,Node]
     useRawManifest: true
@@ -313,6 +321,23 @@ spec:
       RemainAfterExit=yes
       ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
       ExecStart=/usr/local/bin/health-monitor.sh docker
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - name: provision-journald.service
+    roles: [Master,Node]
+    useRawManifest: true
+    manifest: |-
+      [Unit]
+      Description=Provision journald deps
+      Before=kubelet.service docker.service
+
+      [Service]
+      Type=oneshot
+      ExecStartPre=/bin/chmod 544 /bin/provision-journald.sh
+      ExecStart=/bin/provision-journald.sh
+      RemainAfterExit=yes
 
       [Install]
       WantedBy=multi-user.target
