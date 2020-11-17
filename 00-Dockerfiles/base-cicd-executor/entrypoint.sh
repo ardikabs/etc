@@ -17,7 +17,7 @@ mkdir -p /opt/shared
 
 # 1. Example use case for CI/CD using GitlabCI, utilize GitlabCI artifact
 
-if ! curl -sSfL -H "JOB-TOKEN: ${CI_JOB_TOKEN}" "${GITLAB_URL}/api/v4/projects/53/jobs/artifacts/master/download?job=ci-scripts" -o "${TEMPDIR}"/ci-scripts.zip; then
+if ! curl -sfL -H "JOB-TOKEN: ${CI_JOB_TOKEN}" "${GITLAB_URL}/api/v4/projects/53/jobs/artifacts/master/download?job=ci-scripts" -o "${TEMPDIR}"/ci-scripts.zip; then
 cat >&2 <<'EOF'
    📎 Hey there! It looks like an error occurs when trying to download the scripts.
 
