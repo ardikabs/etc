@@ -1,0 +1,10 @@
+[Unit]
+Description="k0s worker"
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/k0s
+ExecStart=/usr/bin/k0s worker $TOKEN
+Restart=always
