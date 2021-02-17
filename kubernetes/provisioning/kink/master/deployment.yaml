@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kink-cluster
+  labels:
+    app: kink-cluster
+    tier: control-plane
+    type: kink
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kink-cluster
+      tier: control-plane
+      mode: kink
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: kink-cluster
+        tier: control-plane
+        mode: kink
+    spec:
+      containers:
+      - image: ardikabs/kink:v1.16.15
+        imagePullPolicy: Always
+        name: k3s
+        args:
+          - server
+          - --kube-apiserver-arg insecure-port=9999
+          - --kube-apiserver-arg insecure-bind-address=0.0.0.0
+        env:
+          - name: KINK_EXTERNAL_ADDRESS
+            value: kink.k8s.ardikabs.com
+        ports:
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1600Mi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - mountPath: /var/lib/rancher/k3s/server/manifests/aws-ecr-creds/
+            name: manifests
+      volumes:
+        - name: manifests
+          configMap:
+            name: kink-cluster-manifests

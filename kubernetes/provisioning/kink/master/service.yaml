@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  name: kink-cluster
+  labels:
+    app: kink-cluster
+    tier: control-plane
+    mode: kink
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 443
+    name: 443-tcp
+  - port: 10251
+    protocol: TCP
+    targetPort: 10251
+    name: 10251-tcp
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    name: 8080-tcp-insecure
+  selector:
+    app: kink-cluster
+    tier: control-plane
+    mode: kink
+

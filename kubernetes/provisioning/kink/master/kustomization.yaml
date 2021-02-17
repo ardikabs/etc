@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+- service.yaml
+- deployment.yaml
+
+configMapGenerator:
+  - name: "jenkins-slave-manifests"
+    files:
+    - aws-ecr-creds-init.yaml=manifests/aws-ecr-creds/init.yaml
+    - aws-ecr-creds-cronjob.yaml=manifests/aws-ecr-creds/cronjob.yaml
+    - aws-ecr-creds-rbac.yaml=manifests/aws-ecr-creds/rbac.yaml
