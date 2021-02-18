@@ -6,6 +6,17 @@ sudo yum install -y curl
 
 echo -e "\nRunning scripts as '$(whoami)'\n\n"
 
+echo -e "Configure default kink-agent environment"
+# Refer to this documentation for the available arguments on kink-agent
+# node-metadata-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#node
+# networking-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#networking
+# component-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#customized-flags
+cat > ~/kink-agent.env << EOF
+INSTALL_KINK_AGENT_ARGS="${INSTALL_KINK_AGENT_ARGS:-}"
+EOF
+sudo mv ~/kink-agent.env /etc/default/kink-agent.env
+
+echo -e "Configure kink-agent cleanup script"
 cat > ~/cleanup-kink-agent.sh << 'EOF'
 #!/bin/bash
 
@@ -17,9 +28,11 @@ echo "$(timestamp) [INFO] Stopping kink-agent"
 docker rm -f kink-agent >/dev/null 2>&1 || true
 EOF
 
+echo -e "Configure kink-agent startup script"
 cat > ~/start-kink-agent.sh << 'EOF'
 #!/bin/bash
 
+KINK_AGENT_ARGS="$*"
 KINK_APISERVER="kink.k8s.ardikabs.com"
 run=0
 
@@ -29,7 +42,7 @@ timestamp() {
 
 run_docker() {
   echo "$(timestamp) [INFO] Running kink-agent"
-  docker run --name kink-agent -e "KINK_APISERVER=${KINK_APISERVER}" --privileged ardikabs/kink:v1.16.15 agent &
+  docker run --name kink-agent -e "KINK_APISERVER=${KINK_APISERVER}" --privileged ardikabs/kink:v1.16.15 agent "${KINK_AGENT_ARGS}" &
 
   if [ $? -ne 0 ]; then
     echo "$(timestamp) [ERROR] Got error from internal docker, exiting." >&2
@@ -77,8 +90,9 @@ ConditionFileIsExecutable=/bin/docker
 [Service]
 StartLimitInterval=5
 StartLimitBurst=10
+EnvironmentFile=-/etc/default/kink-agent
 ExecPreStart=/bin/bash /usr/bin/cleanup-kink-agent.sh
-ExecStart=/bin/bash /usr/bin/start-kink-agent.sh
+ExecStart=/bin/bash /usr/bin/start-kink-agent.sh ${INSTALL_KINK_AGENT_ARGS}
 ExecStop=/bin/bash /usr/bin/cleanup-kink-agent.sh
 Restart=always
 RestartSec=120

@@ -47,6 +47,9 @@ main() {
 
   case $opt in
     server)
+      # Refer to this documentation for available arguments on server
+      # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/
+
       shift 1
       parse_env
       KINK_ARGS="${KINK_ARGS} --no-deploy=servicelb"
@@ -60,6 +63,9 @@ main() {
       eval "set -- k3s server ${KINK_ARGS}"
     ;;
     agent)
+      # Refer to this documentation for available arguments on agent
+      # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config
+
       shift 1
       [ -n "${KINK_APISERVER:-}" ] || err "\$KINK_APISERVER required for agent setup, exiting..."
 
