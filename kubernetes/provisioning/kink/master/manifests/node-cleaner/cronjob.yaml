@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: node-cleaner
+  namespace: default
+spec:
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - image: dtzar/helm-kubectl:3.2.0
+            imagePullPolicy: IfNotPresent
+            name: node-cleaner
+            command:
+            - /bin/sh
+            - -c
+            - |-
+              echo "Deleting NotReady nodes (if any) ..."
+              nodes=$(kubectl get node --no-headers | awk '/NotReady/ {print $1}' | tr '\n' ' ')
+
+              eval "kubectl drain ${nodes} --ignore-daemonsets --delete-local-data --force --grace-period=0" || true
+              eval "kubectl delete no ${nodes} --now=true" || true
+              echo "Done deleting nodes"
+          dnsPolicy: Default
+          restartPolicy: Never
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+  schedule: "0 */1 * * *"
+  successfulJobsHistoryLimit: 3
+  suspend: false
