@@ -1,5 +1,7 @@
 FROM ubuntu:latest
 
+LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
+
 ENV TERM xterm
 
 USER root

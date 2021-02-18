@@ -1,5 +1,7 @@
 FROM debian:stretch-slim
 
+LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
+
 ENV DEBIAN_FRONTEND noninteractive
 
 ENV PATH="$PATH:/usr/local/bin:/opt/shared"

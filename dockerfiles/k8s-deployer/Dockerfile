@@ -1,5 +1,6 @@
 FROM alpine:3.11
 
+LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 LABEL org.label-schema.name="k8s-deployer" \
       org.label-schema.url="https://hub.docker.com/r/ardikabs/k8s-deployer/" \
       org.label-schema.vcs-url="https://github.com/ardikabs/etc"
