@@ -7,7 +7,7 @@ Restart=always
 RestartSec=10
 RemainAfterExit=yes
 ExecStartPre=/bin/chmod 544 /usr/local/bin/health-monitor.sh
-ExecStart=/usr/local/bin/health-monitor.sh %i
+ExecStart=/bin/bash /usr/local/bin/health-monitor.sh %i
 
 [Install]
 WantedBy=multi-user.target
