@@ -14,7 +14,7 @@ resolve() {
   nslookup "$1" | awk '/^Address: / { print $2 }'
 }
 
-parse_env() {
+parse_args() {
   # Resolving external address to IPs
   # also add external address to API Server SAN
   if [ -n "${KINK_EXTERNAL_ADDRESS:-}" ]; then
@@ -42,48 +42,44 @@ parse_env() {
   KINK_ARGS="${KINK_ARGS} --token ${KINK_TOKEN:-"k3s-kink"}"
 }
 
-main() {
-  opt=${1:-''}
+arg=${1:-}
 
-  case $opt in
-    server)
-      # Refer to this documentation for available arguments on server
-      # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/
+# shellcheck disable=SC2086
+case $arg in
+  server)
+    # Refer to this documentation for available arguments on server
+    # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/
 
-      shift 1
-      parse_env
-      KINK_ARGS="${KINK_ARGS} --no-deploy=servicelb"
-      KINK_ARGS="${KINK_ARGS} --no-deploy=traefik"
-      KINK_ARGS="${KINK_ARGS} --https-listen-port=443"
-      KINK_ARGS="${KINK_ARGS} --node-taint master=true:NoExecute"
-      KINK_ARGS="${KINK_ARGS} --token ${KINK_TOKEN:-"k3s-kink"}"
-      KINK_ARGS="${KINK_ARGS} $*"
-      shift $#
+    shift 1
+    parse_args
 
-      eval "set -- k3s server ${KINK_ARGS}"
-    ;;
-    agent)
-      # Refer to this documentation for available arguments on agent
-      # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config
+    set -- k3s server \
+      --no-deploy=servicelb \
+      --no-deploy=traefik \
+      --https-listen-port=443 \
+      --node-taint master=true:NoExecute \
+      ${KINK_ARGS:+$KINK_ARGS $*}
+  ;;
+  agent)
+    # Refer to this documentation for available arguments on agent
+    # doc: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config
 
-      shift 1
-      [ -n "${KINK_APISERVER:-}" ] || err "\$KINK_APISERVER required for agent setup, exiting..."
+    shift 1
+    [ -n "${KINK_APISERVER:-}" ] || err "\$KINK_APISERVER required for agent setup, exiting..."
+    parse_args
 
-      parse_env
-      KINK_ARGS="${KINK_ARGS} $*"
-      shift $#
+    until wget -q --spider http://"${KINK_APISERVER}":10251/healthz 2>/dev/null; do
+      echo "wait for api server to up..."
+      sleep 1
+    done
 
-      until wget -q --spider http://"${KINK_APISERVER}":10251/healthz 2>/dev/null; do
-        echo "wait for api server to up..."
-        sleep 1
-      done
+    set -- k3s agent ${KINK_ARGS:+$KINK_ARGS $*}
+  ;;
+  *)
+    echo "kink: expected first argument either 'server' or 'agent': got '${arg}'" >&2
+    exit 1
+  ;;
+esac
 
-      eval "set -- k3s agent ${KINK_ARGS}"
-    ;;
-  esac
-
-  printf "Running the following command: \n %s \n\n" "$*"
-  exec "$@"
-}
-
-main "$@"
+printf "Running the following command: \n%b \n\n" "\033[1;33m$*\033[0m"
+exec "$@"
