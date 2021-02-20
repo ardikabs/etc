@@ -16,22 +16,22 @@ function kubelet_restart(){
   sleep 5
   echo "Re-starting kubelet.."
   systemctl start kubelet
-  echo "$((`cat ${KUBELET_RESTART}` + 1))" > ${KUBELET_RESTART}
-  echo -e "Kubelet restart count: `cat ${KUBELET_RESTART}`"
+  echo "$(($(cat ${KUBELET_RESTART}) + 1))" > ${KUBELET_RESTART}
+  echo -e "Kubelet restart count: $(cat ${KUBELET_RESTART})"
 
   sleep 120
 }
 
 function docker_monitoring {
-  while [ 1 ]; do
+  while true; do
     if ! timeout 60 docker ps > /dev/null; then
       echo "Docker daemon failed!"
       pkill --signal 9 docker
       # Wait for a while, as we don't want to kill it again before it is really up.
       sleep 120
       systemctl start docker
-      echo "$((`cat ${DOCKER_RESTART}` + 1))" > ${DOCKER_RESTART}
-      echo -e "Docker restart count: `cat ${DOCKER_RESTART}`"
+      echo "$(($(cat ${DOCKER_RESTART}) + 1))" > ${DOCKER_RESTART}
+      echo -e "Docker restart count: $(cat ${DOCKER_RESTART})"
 
     else
       sleep "${SLEEP_SECONDS}"
@@ -39,17 +39,23 @@ function docker_monitoring {
   done
 }
 
+# shellcheck disable=SC2086
 function kubelet_monitoring {
   echo "Wait for 2 minutes for kubelet to be functional"
   sleep 120
-  local -r max_seconds=20
-  local output=""
-  while [ 1 ]; do
-    if ! output=$(curl -m "${max_seconds}" -f -s -S http://127.0.0.1:10255/healthz 2>&1); then
-      kubelet_restart $output
 
-    elif ! output=$(journalctl -u kubelet -n50 | grep -m1 -o "use of closed network connection" 2>&1); then
-      kubelet_restart "Kubelet has caught 'use of closed network connection'"
+  local -r max_seconds
+  local output
+
+  max_seconds=20
+  output=""
+
+  while true; do
+    if ! output=$(curl -m "${max_seconds}" -f -s -S http://127.0.0.1:10248/healthz 2>&1); then
+      kubelet_restart ${output}
+
+    elif output=$(journalctl -u kubelet -n50 | grep -m1 -o "use of closed network connection" 2>&1); then
+      kubelet_restart "Kubelet has caught '${output}'"
 
     else
       sleep "${SLEEP_SECONDS}"
