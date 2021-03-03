@@ -16,29 +16,57 @@ spec:
         - /bin/sh
         - -c
         - |-
-          SECRET_NAME=${AWS_ACCOUNT}-${AWS_DEFAULT_REGION}-ecr-registry
-          TOKEN=$(aws ecr get-login-password)
+          #!/bin/sh
 
-          echo "ENV variables setup done."
-          kubectl delete secret --ignore-not-found $SECRET_NAME
-          kubectl create secret docker-registry $SECRET_NAME \
-          --docker-server=https://${AWS_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com \
-          --docker-username=AWS \
-          --docker-password="${TOKEN}"
+          mkdir -p ~/.aws
+          cat > ~/.aws/credentials <<EOF
+          [default]
+          aws_access_key_id=AWSACCESSKEYIDXXX
+          aws_secret_access_key=AWSSECRETACCESSKEYXXX
+          EOF
 
-          echo "Secret created by name. $SECRET_NAME"
-          kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"'$SECRET_NAME'"}]}'
+          cat > ~/.aws/config <<EOF
+          [profile 123456789]
+          region = ap-southeast-1
+          role_arn = arn:aws:iam::123456789:role/terraform-role
+          source_profile = default
 
+          [profile 987654321]
+          region = ap-southeast-1
+          role_arn = arn:aws:iam::987654321:role/terraform-role
+          source_profile = default
+          EOF
+
+          secrets=""
+
+          buildsecret() {
+            AWS_PROFILE=$1
+            SECRET_NAME=${AWS_PROFILE}-${AWS_DEFAULT_REGION}-ecr-registry
+            TOKEN=$(aws ecr get-login-password)
+
+            echo "ENV variables setup done."
+            kubectl delete secret --ignore-not-found "$SECRET_NAME"
+            kubectl create secret docker-registry "$SECRET_NAME" \
+            --docker-server="https://${AWS_PROFILE}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com" \
+            --docker-username=AWS \
+            --docker-password="${TOKEN}"
+
+            echo "Secret created by name. $SECRET_NAME"
+
+            secrets="{\"name\":\"$SECRET_NAME\"}${secrets:+,$secrets}"
+          }
+
+          for acc in $(echo "${AWS_ACCOUNTS:-}" | tr ',' ' '); do
+            buildsecret "$acc"
+          done
+
+          kubectl patch serviceaccount default -p '{"imagePullSecrets":['"$secrets"']}'
           echo "All done."
         env:
-          - name: AWS_ACCOUNT
-            value: "123456789"
-          - name: AWS_DEFAULT_REGION
-            value: ap-southeast-1
-          - name: AWS_SECRET_ACCESS_KEY
-            value: aws-super-secret-access
-          - name: AWS_ACCESS_KEY_ID
-            value: AWSSUPERACCESSKEYID
+        - name: AWS_ACCOUNTS
+          value: "123456789,987654321"
+        - name: AWS_DEFAULT_REGION
+          value: ap-southeast-1
         resources: {}
       dnsPolicy: Default
       restartPolicy: Never
