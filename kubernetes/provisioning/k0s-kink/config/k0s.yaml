@@ -1,0 +1,12 @@
+kind: Cluster
+metadata:
+  name: k0s
+spec:
+  api:
+    address: 10.10.5.100
+    externalAddress: "kink.k8s.ardikabs.com"
+    sans:
+    - kink.k8s.ardikabs.com
+  network:
+    podCIDR: 10.244.0.0/16
+    serviceCIDR: 10.96.0.0/12
