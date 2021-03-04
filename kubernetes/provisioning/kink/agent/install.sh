@@ -12,9 +12,10 @@ echo -e "Configure default kink-agent environment"
 # networking-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#networking
 # component-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#customized-flags
 cat > ~/kink-agent.env << EOF
+KINK_APISERVER=${KINK_APISERVER}
 INSTALL_KINK_AGENT_ARGS="${INSTALL_KINK_AGENT_ARGS:-}"
 EOF
-sudo mv ~/kink-agent.env /etc/default/kink-agent.env
+sudo mv ~/kink-agent.env /etc/default/kink-agent
 
 echo -e "Configure kink-agent cleanup script"
 cat > ~/cleanup-kink-agent.sh << 'EOF'
@@ -33,7 +34,7 @@ cat > ~/start-kink-agent.sh << 'EOF'
 #!/bin/bash
 
 KINK_AGENT_ARGS="$*"
-KINK_APISERVER="kink.k8s.ardikabs.com"
+KINK_APISERVER="${KINK_APISERVER:-kink.k8s.ardikabs.com}"
 run=0
 
 timestamp() {
@@ -42,7 +43,7 @@ timestamp() {
 
 run_docker() {
   echo "$(timestamp) [INFO] Running kink-agent"
-  docker run --name kink-agent -e "KINK_APISERVER=${KINK_APISERVER}" --privileged ardikabs/kink:v1.16.15 agent "${KINK_AGENT_ARGS}" &
+  docker run --net=host --name kink-agent -e "KINK_APISERVER=${KINK_APISERVER}" --privileged ardikabs/kink:v1.16.15 agent "${KINK_AGENT_ARGS}" &
 
   if [ $? -ne 0 ]; then
     echo "$(timestamp) [ERROR] Got error from internal docker, exiting." >&2
@@ -101,9 +102,43 @@ RestartSec=120
 WantedBy=multi-user.target
 EOF
 
+echo -e "\nConfigure Docker cleanup service unit file"
+cat > ~/docker-cleanup.service << EOF
+[Unit]
+Description=Docker clean up
+Wants=docker-cleanup.timer
+
+[Service]
+ExecStartPre=/bin/docker system prune -f
+ExecStart=/bin/docker volume prune -f
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Setup docker cleanup timer which run in the middle of night everyday
+echo -e "\nConfigure Docker cleanup timer unit file"
+cat > ~/docker-cleanup.timer << EOF
+[Unit]
+Description=Docker clean up job
+Requires=docker-cleanup.service
+
+[Timer]
+Unit=docker-cleanup.service
+OnCalendar=*-*-* 00:00:00
+AccuracySec=1s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+
 # Move SystemD service unit file to /etc/systemd/system
 sudo mv ~/kink-agent.service /etc/systemd/system/
+sudo mv ~/docker-cleanup.service /etc/systemd/system/
+sudo mv ~/docker-cleanup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 
 sudo systemctl enable docker
 sudo systemctl enable kink-agent
+sudo systemctl enable docker-cleanup.timer
