@@ -12,7 +12,7 @@ echo -e "Configure default kink-agent environment"
 # networking-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#networking
 # component-related: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/#customized-flags
 cat > ~/kink-agent.env << EOF
-KINK_APISERVER=${KINK_APISERVER}
+KINK_APISERVER=${KINK_APISERVER:-}
 INSTALL_KINK_AGENT_ARGS="${INSTALL_KINK_AGENT_ARGS:-}"
 EOF
 sudo mv ~/kink-agent.env /etc/default/kink-agent
@@ -43,7 +43,11 @@ timestamp() {
 
 run_docker() {
   echo "$(timestamp) [INFO] Running kink-agent"
-  docker run --net=host --name kink-agent -e "KINK_APISERVER=${KINK_APISERVER}" --privileged ardikabs/kink:v1.16.15 agent "${KINK_AGENT_ARGS}" &
+  docker rm -f kink-agent >/dev/null 2>&1 || true
+  docker run --net=host --privileged \
+    --name kink-agent \
+    -e "KINK_APISERVER=${KINK_APISERVER}" \
+    ardikabs/kink:v1.16.15 agent "${KINK_AGENT_ARGS}" &
 
   if [ $? -ne 0 ]; then
     echo "$(timestamp) [ERROR] Got error from internal docker, exiting." >&2
@@ -54,10 +58,12 @@ run_docker() {
 run_agent() {
   if [[ "${run}" -eq 1 ]]; then
     echo "$(timestamp)] [INFO] Stopping kink-agent"
-    docker rm -f kink-agent >/dev/null 2>&1 || true
-
     run_docker
   elif [[ -z "$(docker ps -q --filter name=kink-agent)" ]]; then
+    echo "$(timestamp)] [WARNING] kink-agent instance not found, restarting ..."
+    run_docker
+  elif docker logs kink-agent --tail=5 2>&1 | grep -Eq "(error getting node|failed to get node)"; then
+    echo "$(timestamp)] [WARNING] kink-agent node not found, restarting ..."
     run_docker
   fi
   run=0
@@ -82,7 +88,7 @@ chmod +x ~/{start,cleanup}-kink-agent.sh
 sudo mv ~/{start,cleanup}-kink-agent.sh /usr/bin/
 
 echo -e "\nConfigure KINK Agent Service Unit File"
-cat > ~/kink-agent.service << EOF
+cat > ~/kink-agent.service << 'EOF'
 [Unit]
 Description=Kubernetes in Kubernetes Agent
 After=syslog.target network.target
@@ -103,7 +109,7 @@ WantedBy=multi-user.target
 EOF
 
 echo -e "\nConfigure Docker cleanup service unit file"
-cat > ~/docker-cleanup.service << EOF
+cat > ~/docker-cleanup.service << 'EOF'
 [Unit]
 Description=Docker clean up
 Wants=docker-cleanup.timer
