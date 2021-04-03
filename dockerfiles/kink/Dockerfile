@@ -1,4 +1,4 @@
-FROM rancher/k3s:v1.16.15-k3s1
+FROM rancher/k3s:v1.18.17-k3s1
 
 LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 

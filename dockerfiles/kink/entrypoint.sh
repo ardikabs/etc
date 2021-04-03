@@ -59,8 +59,8 @@ case $arg in
     parse_args "$*"
 
     [ -n "${KINK_APISERVER:-}" ] || err "'\$KINK_APISERVER' required for agent setup, exiting..."
-    until wget -q --spider http://"${KINK_APISERVER}":10251/healthz 2>/dev/null; do
-      echo "wait for api server to up..."
+    until [ -n "$(resolve "${KINK_APISERVER}")" ]>/dev/null; do
+      echo "wait for Kubernetes API Server endpoint to be resolved ..."
       sleep 1
     done
 
