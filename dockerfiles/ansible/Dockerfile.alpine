@@ -14,7 +14,11 @@ RUN apk add --no-cache --update \
         make \
         openssh-client \
         ca-certificates
-RUN apk add --no-cache --update \
+RUN PATH="/root/.cargo/bin:${PATH}" && \
+    curl https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init --output /tmp/rustup-init && \
+    chmod +x /tmp/rustup-init && \
+    /tmp/rustup-init -y && \
+    apk add --no-cache --update \
         --virtual build-dependencies \
         alpine-sdk \
         gcc \
@@ -25,6 +29,7 @@ RUN apk add --no-cache --update \
     pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     apk del build-dependencies && \
+    rustup self uninstall -y && \
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 CMD ["ansible"]

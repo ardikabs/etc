@@ -1,4 +1,4 @@
-FROM ardikabs/ansible:2.9-stretch
+FROM ardikabs/ansible:2.10-stretch
 
 LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 

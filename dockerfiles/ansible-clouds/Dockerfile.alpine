@@ -1,4 +1,4 @@
-FROM ardikabs/ansible:2.9-alpine
+FROM ardikabs/ansible:2.10-alpine
 
 LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 
