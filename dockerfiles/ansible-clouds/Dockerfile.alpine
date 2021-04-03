@@ -1,0 +1,9 @@
+FROM ardikabs/ansible:2.9-alpine
+
+LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
+
+RUN ansible-galaxy collection install google.cloud && \
+    ansible-galaxy collection install community.aws && \
+    curl -sfL https://github.com/wallix/awless/releases/download/v0.1.11/awless-linux-amd64.tar.gz -o- | tar xzvf - -C /usr/bin
+
+CMD ["ansible"]

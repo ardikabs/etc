@@ -1,0 +1,11 @@
+FROM ardikabs/ansible:2.9-stretch
+
+LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN ansible-galaxy collection install google.cloud && \
+    ansible-galaxy collection install community.aws && \
+    curl -sfL https://github.com/wallix/awless/releases/download/v0.1.11/awless-linux-amd64.tar.gz -o- | tar xzvf - -C /usr/bin
+
+CMD ["ansible"]
