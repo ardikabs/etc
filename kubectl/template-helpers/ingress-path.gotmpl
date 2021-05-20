@@ -1,0 +1,25 @@
+{{printf "%-20s %-40s %-35s %-30s %-12s\n" "Namespace" "Ingress" "Host" "Path" "Backend"}}
+{{- if .items}}
+{{- range .items}}
+    {{- $namespace := (index .metadata "namespace") }}
+    {{- $ingressName := (index .metadata "name") }}
+    {{- range $rule := (index .spec "rules") }}
+        {{- $host := .host }}
+        {{- range $path := (index .http "paths")}}
+            {{- $ppath := ""}}
+            {{- if .path}}{{$ppath = .path}}{{ else}}{{$ppath = "-"}}{{end}}
+            {{- printf "%-20s %-40s %-35s %-30s %-12s\n" $namespace $ingressName $host $ppath .backend.serviceName }}
+        {{- end}}
+    {{- end }}
+{{- end}}
+{{- else}}
+{{- $namespace := (index .metadata "namespace") }}
+{{- $ingressName := (index .metadata "name") }}
+{{- range $rule := (index .spec "rules") }}
+    {{- $host := .host }}
+    {{- range $path := (index .http "paths")}}
+        {{- if .path}}{{$ppath = .path}}{{ else}}{{$ppath = "-"}}{{end}}
+        {{- printf "%-20s %-40s %-35s %-30s %-12s\n" $namespace $ingressName $host $path .backend.serviceName }}
+    {{- end}}
+{{- end }}
+{{- end}}
