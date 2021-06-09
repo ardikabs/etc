@@ -5,7 +5,8 @@ wget -q "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VER
 wget -q "https://github.com/roboll/helmfile/releases/download/${HELMFILE_VERSION}/helmfile_linux_amd64" -O /usr/local/bin/helmfile
 wget -q "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" -O - | tar -xzO kustomize > /usr/local/bin/kustomize
 wget -q "https://github.com/mozilla/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux" -O /usr/local/bin/sops
-bash -c "chmod +x /usr/local/bin/{kubectl,helm,helmfile,kustomize,sops}"
+
+/bin/bash -c "chmod +x /usr/local/bin/{kubectl,helm,helmfile,kustomize,sops}"
 helm plugin install https://github.com/databus23/helm-diff --version "${HELM_DIFF_VERSION}" >/dev/null 2>&1
 
 exec "$@"

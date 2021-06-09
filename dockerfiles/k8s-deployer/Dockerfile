@@ -15,7 +15,8 @@ ENV HELM_DIFF_VERSION=v3.1.3
 
 COPY entrypoint.sh /docker-entrypoint.sh
 
-RUN apk add --no-cache \
+RUN chmod +x /docker-entrypoint.sh && \
+    apk add --no-cache \
         make \
         openssh-client \
         curl \
@@ -24,6 +25,6 @@ RUN apk add --no-cache \
         gnupg \
         bash && \
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/* && \
-    chmod +x /docker-entrypoint.sh
+    ln -s /docker-entrypoint.sh /usr/local/bin/bash
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
