@@ -21,7 +21,6 @@ RUN chmod +x /docker-entrypoint.sh && \
         unzip \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man && \
-    ln -s /bin/entrypoint.sh /usr/local/bin/bash && \
     apt-get clean
 
-ENTRYPOINT ["/bin/entrypoint.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -24,7 +24,6 @@ RUN chmod +x /docker-entrypoint.sh && \
         ca-certificates \
         gnupg \
         bash && \
-    rm -rf /tmp/* /var/tmp/* /var/cache/apk/* && \
-    ln -s /docker-entrypoint.sh /usr/local/bin/bash
+    rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
