@@ -6,8 +6,7 @@ ENV TERM xterm
 
 USER root
 
-COPY entrypoint.sh /usr/local/bin
-COPY sshd_config /etc/ssh/sshd_config
+COPY entrypoint.sh /docker-entrypoint.sh
 
 RUN apt update -y && \
     apt install -y -f --no-install-recommends \
@@ -26,9 +25,11 @@ RUN apt update -y && \
 RUN mkdir -p /var/run/sshd && \
     mkdir /root/.ssh && \
     chmod 700 /root/.ssh && \
-    touch /root/.ssh/authorized_keys
+    touch /root/.ssh/authorized_keys && \
+    chmod 777 /docker-entrypoint.sh
 
 EXPOSE 22
+COPY sshd_config /etc/ssh/sshd_config
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["ssh-server"]
