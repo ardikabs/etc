@@ -15,6 +15,7 @@ Example usage (replace `VPN_USER` and `VPN_HOST` accordingly):
 $ docker run --rm -it --net host --cap-add=NET_ADMIN \
     -e VPN_USER=<username> \
     -e VPN_HOST=<vpn_host> \
+    -e VPN_PASSWORD=<vpn_password> \
     ardikabs/strongswan \
     --ike-proposal aes256-sha1-modp1024
 ```

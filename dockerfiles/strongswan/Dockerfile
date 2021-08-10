@@ -4,6 +4,7 @@ LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 
 RUN apk update && \
     apk add --no-cache \
+        expect \
         curl \
         strongswan \
         ca-certificates
