@@ -17,6 +17,7 @@ COPY entrypoint.sh /docker-entrypoint.sh
 
 RUN chmod +x /docker-entrypoint.sh && \
     apk add --no-cache \
+        gettext \
         make \
         openssh-client \
         curl \
