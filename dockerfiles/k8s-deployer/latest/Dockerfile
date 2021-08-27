@@ -6,9 +6,9 @@ LABEL org.label-schema.name="k8s-deployer" \
       org.label-schema.vcs-url="https://github.com/ardikabs/etc"
 
 ENV PATH="/usr/local/bin:${PATH}"
-ENV HELM_VERSION=v3.2.0
-ENV KUBECTL_VERSION=v1.16.10
-ENV HELMFILE_VERSION=v0.130.0
+ENV HELM_VERSION=v3.3.0
+ENV KUBECTL_VERSION=v1.18.20
+ENV HELMFILE_VERSION=v0.140.0
 ENV KUSTOMIZE_VERSION=v3.8.4
 ENV SOPS_VERSION=v3.6.1
 ENV HELM_DIFF_VERSION=v3.1.3
