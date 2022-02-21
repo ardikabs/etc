@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ -z ${1:-} ]; then
+    echo >&2 -e "vpn: no host selected"
+    exit 1
+fi
+
+host=$1.vpn.company.io
+user=ardika.saputro
+pass=$(oathtool --base32 --totp <CHANGE_WITH_YOUR_TOTP_SECRET>)
+
+vpn_pids=$(pgrep -f $host | tr "\n" " " || true)
+sudo kill -15 $vpn_pids >/dev/null 2>&1 || true
+
+truncate -s=0 /tmp/$host.pid
+
+expect -c "
+eval spawn -ignore HUP sudo /opt/homebrew/bin/charon-cmd \
+    --host $host \
+    --identity $user \
+    --cert /opt/certs/isrgrootx1.pem.txt \
+    --cert /opt/certs/letsencryptauthorityx3.pem.txt \
+    --profile ikev2-eap
+
+sleep 1
+
+exp_internal -f /tmp/$host.log 0
+
+
+expect {
+    \"EAP password: \" { send $pass\r }
+}
+
+interact
+"

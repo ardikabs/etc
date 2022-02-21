@@ -1,0 +1,83 @@
+#!/bin/bash
+
+set -euo pipefail
+
+vpn_endpoints=(
+  development
+  staging
+  production
+)
+
+get_choice() {
+  choice=$(printf "%s\n" "${vpn_endpoints[@]}" | fzf)
+  echo -n $choice
+}
+
+usage() {
+  cat <<EOF
+Strongswan client integrate with tmux
+
+USAGE:
+
+  vpn             : establish connection to the target host
+  vpn logs        : check vpn logs
+  vpn cleanup     : clean up all established vpn connections
+
+  vpn -h,--help   : show this message
+
+EOF
+}
+
+
+main() {
+  if ! type tmux >/dev/null 2>&1; then
+    echo >&2 -e "vpn: tmux is required"
+  fi
+
+  if ! type fzf >/dev/null 2>&1; then
+    echo >&2 -e "vpn: fzf is required"
+  fi
+
+  if [[ $# -eq 0 ]]; then
+    host=$(get_choice)
+    echo >&2 -e "vpn: connecting to $host ..."
+
+    if tmux has-session -t $host 2>/dev/null; then
+      tmux kill-session -t $host
+    fi
+
+    tmux new-session -d -s $host
+    tmux new-window -t $host:99 ./vpn-conn $host && tmux kill-window -t $host:1
+
+    echo >&2 -e "vpn: vpn connection to $host should be established in a moment"
+    echo >&2 -e "vpn: check the connection using the following command: \n\t\033[1;33mvpn logs $host\033[0m"
+
+  else
+    for arg in "$@"; do
+      case "${arg}" in
+        logs)
+          shift
+          [[ $# -eq 0 ]] && host=$(get_choice) || host=$1
+
+          if ! tmux has-session -t $host 2>/dev/null; then
+            echo >&2 -e "vpn: there is no vpn connection established to $host"
+            exit 1
+          fi
+
+          [ -z ${TMUX:-} ] && tmux attach -t $host:99 || tmux switch -t $host:99
+        ;;
+        cleanup)
+          echo >&2 -e "vpn: cleanup all vpn connection"
+          [ -z ${TMUX:-} ] && tmux attach -t main || tmux switch -t main
+
+          tmux kill-session -a
+        ;;
+        -h | --help)
+          usage
+        ;;
+      esac
+    done
+  fi
+}
+
+main "$@"
