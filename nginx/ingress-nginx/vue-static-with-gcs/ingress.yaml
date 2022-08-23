@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+
+      # this will catch the exact root path to be served using index.html
+      if ($uri = "/") {
+        rewrite ^ /my-google-cloud-storage-bucket/index.html break;
+        proxy_pass  https://storage.googleapis.com;
+      }
+
+      # this will catch any extension files such as `.js, .css, .json, .png, .svg`
+      # then served directly from google cloud storage
+      if ($uri ~ "^(.*)\.(.*)$") {
+        rewrite ^ /my-google-cloud-storage-bucket$uri break;
+        proxy_pass  https://storage.googleapis.com;
+      }
+
+      # other than that all paths will be proxied through the index.html
+    nginx.ingress.kubernetes.io/rewrite-target: /my-google-cloud-storage-bucket/index.html
+    nginx.ingress.kubernetes.io/upstream-vhost: storage.googleapis.com
+  generation: 2
+  name: vue-static-file-with-gcs
+spec:
+  rules:
+  - host: vue-static-file-with-gcs.ardikabs.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: googlestoragebucket
+            port:
+              number: 443
+        path: /
+        pathType: ImplementationSpecific
