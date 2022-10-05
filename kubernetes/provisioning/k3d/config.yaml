@@ -1,0 +1,36 @@
+apiVersion: k3d.io/v1alpha4
+kind: Simple
+image: docker.io/rancher/k3s:v1.23.1-k3s1
+servers: 1
+agents: 1
+kubeAPI:
+  host: 10.0.0.5.nip.io
+  hostIP: 10.0.0.5
+  hostPort: "6443"
+ports:
+  - port: 80:80
+    nodeFilters:
+    - agent:*
+  - port: 443:443
+    nodeFilters:
+    - agent:*
+options:
+  k3d:
+    wait: true
+    timeout: "60s"
+    disableLoadbalancer: false
+    disableRollback: true
+  k3s:
+    extraArgs:
+      - arg: --no-deploy=traefik,servicelb,metrics-server
+        nodeFilters:
+          - server:0
+      - arg: --tls-san=10.0.0.5.nip.io
+        nodeFilters:
+          - server:0
+      - arg: --node-taint=controlplane=true:NoExecute
+        nodeFilters:
+          - server:0
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
