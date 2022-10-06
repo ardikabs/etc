@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eo pipefail
+
+if ! journalctl -u kubelet -n 1 | grep "use of closed network connection"; then
+  echo "Error not found in logs"
+else
+  echo "Restart kubelet"
+  systemctl restart kubelet
+fi
