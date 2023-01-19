@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: l4-proxy-vs
+spec:
+  hosts:
+    - service.ardikabs.com
+  gateways:
+    - istio-system/l4-proxy-gw
+  tls:
+    - match:
+        - gateways:
+            - istio-system/l4-proxy-gw
+          port: 443
+          sniHosts:
+            - service.ardikabs.com
+      route:
+        - destination:
+            host: service.ardikabs.com
+            port:
+              number: 443

@@ -1,0 +1,44 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: example-se
+spec:
+  endpoints:
+  - address: 10.13.102.8.nip.io
+    locality: ap-southeast-1
+    ports:
+      http: 8080
+  - address: 10.13.109.0.nip.io
+    locality: ap-southeast-2
+    ports:
+      http: 8080
+  exportTo:
+  - .
+  hosts:
+  - example.com
+  location: MESH_EXTERNAL
+  ports:
+  - name: http
+    number: 80
+    protocol: HTTP
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: example-dr
+spec:
+  exportTo:
+  - .
+  host: example.com
+  trafficPolicy:
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+        failover:
+        - from: ap-southeast-1
+          to: ap-southeast-2
+    outlierDetection:
+      baseEjectionTime: 1m
+      consecutive5xxErrors: 1
+      interval: 15s

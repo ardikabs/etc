@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: l4-proxy-gw
+  namespace: istio-system
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - service.ardikabs.com
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: tls
+        protocol: TLS
+      hosts:
+        - service.ardikabs.com
+      tls:
+        mode: PASSTHROUGH

@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: httpproxy-vs
+spec:
+  hosts:
+    - service.ardikabs.com
+  gateways:
+    - mesh
+  http:
+    - match:
+        - gateways:
+            - mesh
+          port: 80
+          uri:
+            prefix: "/hoyohoyo"
+      rewrite:
+        uri: "/blackbox"
+      route:
+        - destination:
+            host: service.ardikabs.com
+            port:
+              number: 443
+      retries:
+        attempts: 3

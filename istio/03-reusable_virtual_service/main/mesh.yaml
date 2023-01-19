@@ -1,0 +1,57 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: echoserver-mesh-dvs
+  namespace: istio-testing
+spec:
+  http:
+    - route:
+        - destination:
+            host: echoserver.istio-testing.svc.cluster.local
+            subset: stable
+            port:
+              number: 8080
+          weight: 100
+        - destination:
+            host: echoserver.istio-testing.svc.cluster.local
+            subset: canary
+            port:
+              number: 8080
+          weight: 0
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: echoserver-mesh-dr
+  namespace: istio-testing
+spec:
+  host: echoserver.istio-testing.svc.cluster.local
+  subsets:
+    - labels:
+        track: stable
+      name: stable
+    - labels:
+        track: canary
+      name: canary
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: echoserver-mesh-vs
+  namespace: istio-testing
+spec:
+  hosts:
+    - echoserver.istio-testing.svc.cluster.local
+  gateways:
+    - mesh
+  http:
+    - match:
+        - uri:
+            prefix: /
+      name: echoserver-route
+      delegate:
+        name: echoserver-mesh-d-vs
+        namespace: istio-testing

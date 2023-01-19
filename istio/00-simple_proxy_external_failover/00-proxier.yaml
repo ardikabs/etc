@@ -1,0 +1,45 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: directegress-se
+spec:
+  exportTo:
+    - "."
+  hosts:
+    - service.ardikabs.com
+  endpoints:
+    - address: dynamodb.ap-southeast-1.amazonaws.com
+      ports:
+        http: 443
+      locality: ap-southeast-1
+    - address: dynamodb.ap-southeast-2.amazonaws.com
+      ports:
+        http: 443
+      locality: ap-southeast-2
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: directegress-dr
+spec:
+  exportTo:
+    - "."
+  host: service.ardikabs.com
+  trafficPolicy:
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+        failover:
+          - from: ap-southeast-1
+            to: ap-southeast-2
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 15s
+      baseEjectionTime: 30s
+    tls:
+      mode: SIMPLE
