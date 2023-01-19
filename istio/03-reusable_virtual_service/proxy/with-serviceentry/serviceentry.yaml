@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: example-se
+  namespace: proxy-system
+spec:
+  hosts:
+    - example.proxy
+  addresses:
+    - 169.254.0.100 # using the APIPA CIDR (169.254.0.0/16), because it is rarely being used
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  resolution: STATIC
+  location: MESH_INTERNAL

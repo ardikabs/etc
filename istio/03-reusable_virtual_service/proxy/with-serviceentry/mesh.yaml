@@ -1,11 +1,11 @@
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: proxy-echoserver-vs
-  namespace: istio-testing
+  name: example-vs
+  namespace: proxy-system
 spec:
   hosts:
-    - proxy-echoserver.istio-testing.svc.cluster.local
+    - example.proxy
   gateways:
     - mesh
   http:
