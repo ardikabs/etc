@@ -1,0 +1,28 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  labels:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/managed-by: manual
+  name: podinfo-vs
+spec:
+  gateways:
+    - mesh
+  hosts:
+    - podinfo
+  http:
+    - match:
+        - uri:
+            prefix: /
+      name: index
+      retries:
+        attempts: 2
+      route:
+        - destination:
+            host: podinfo
+            subset: stable
+          weight: 100
+        - destination:
+            host: podinfo
+            subset: canary
+          weight: 0

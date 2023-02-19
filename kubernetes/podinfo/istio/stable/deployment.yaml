@@ -1,7 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: podinfo
+  name: podinfo-stable
+  labels:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/track: stable
+    app.kubernetes.io/managed-by: manual
 spec:
   minReadySeconds: 3
   revisionHistoryLimit: 5
@@ -12,14 +16,18 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: podinfo
+      app.kubernetes.io/name: podinfo
+      app.kubernetes.io/track: stable
+      app.kubernetes.io/managed-by: manual
   template:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9797"
       labels:
-        app: podinfo
+        app.kubernetes.io/name: podinfo
+        app.kubernetes.io/track: stable
+        app.kubernetes.io/managed-by: manual
     spec:
       containers:
         - name: podinfod
@@ -40,7 +48,7 @@ spec:
             - --port=9898
             - --port-metrics=9797
             - --grpc-port=9999
-            - --grpc-service-name=podinfo
+            - --grpc-service-name=podinfo-stable
             - --level=info
             - --random-delay=false
             - --random-error=false

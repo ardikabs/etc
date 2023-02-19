@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/track: stable
+    app.kubernetes.io/managed-by: manual
+  name: podinfo-stable
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: podinfo
+    app.kubernetes.io/track: stable
+  ports:
+    - name: http
+      port: 9898
+      protocol: TCP
+      targetPort: http
+    - name: grpc
+      port: 9999
+      protocol: TCP
+      targetPort: grpc
