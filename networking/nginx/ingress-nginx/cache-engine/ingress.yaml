@@ -1,0 +1,46 @@
+---
+# Ingress Nginx Controller
+controller:
+  config:
+    http-snippet: |
+      proxy_cache_path /data/nginx/cache levels=1:2 keys_zone=cache:10m max_size=100m inactive=1d use_temp_path=off;
+      proxy_cache_lock on;
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |-
+      proxy_ssl_server_name on;
+      proxy_ssl_name custom-domain.ardikabs.com;
+
+      proxy_cache_background_update on;
+      proxy_cache_revalidate on;
+
+      proxy_cache cache;
+      proxy_cache_min_uses 1;
+      proxy_cache_valid 200 1d;
+      proxy_cache_valid 404 1m;
+      proxy_cache_bypass $http_x_purge;
+
+      proxy_cache_use_stale error timeout updating http_404 http_500 http_502 http_503 http_504;
+
+      add_header X-Cache-Status $upstream_cache_status;
+  generation: 2
+  name: ingress-nginx-with-cache
+spec:
+  rules:
+    - host: custom-domain.ardikabs.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: random-cloudfront-net
+                port:
+                  number: 443
+            path: /
+            pathType: ImplementationSpecific
