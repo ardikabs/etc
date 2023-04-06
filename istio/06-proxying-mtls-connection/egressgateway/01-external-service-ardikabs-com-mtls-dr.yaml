@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: external-service-ardikabs-com-mtls-dr
+  labels:
+    squad: "foundation"
+    tribe: "system"
+  namespace: istio-system
+spec:
+  exportTo:
+    - "."
+  host: external-service.ardikabs.com
+  subsets:
+    - name: mtls-default
+      trafficPolicy:
+        portLevelSettings:
+          - port:
+              number: 443
+            tls:
+              mode: MUTUAL
+              credentialName: external-service-ardikabs-com-mtls-cert

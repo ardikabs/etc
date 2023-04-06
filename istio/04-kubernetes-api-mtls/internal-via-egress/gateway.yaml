@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  labels:
+    app: gateways
+    release: istio
+    squad: "foundation"
+    tribe: "system"
+  name: k8s-cluster-sgp-ardikabs-com-egress-gw
+  namespace: istio-system
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+    - hosts:
+        - "k8s.cluster.sgp.ardikabs.com"
+        - "k8s-cluster-sgp.proxy.svc.cluster.local"
+      port:
+        name: https
+        number: 443
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: k8s-cluster-sgp-client-mtls-cert

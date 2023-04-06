@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: k8s-cluster-sgp-ardikabs-com-mtls-dr
+  namespace: istio-system
+  labels:
+    squad: "foundation"
+    tribe: "system"
+spec:
+  exportTo:
+    - "."
+  host: k8s.cluster.sgp.ardikabs.com
+  subsets:
+    - name: mtls-default
+      trafficPolicy:
+        tls:
+          mode: MUTUAL
+          credentialName: k8s-cluster-sgp-client-mtls-cert
+          sni: k8s.cluster.sgp.ardikabs.com

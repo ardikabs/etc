@@ -1,0 +1,27 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: external-service-ardikabs-com-mtls-vs
+  labels:
+    squad: "foundation"
+    tribe: "system"
+  namespace: <RESERVED_NAMESPACE>
+spec:
+  exportTo:
+    - "*"
+  hosts:
+    - "external-service.ardikabs.com"
+  gateways:
+    - mesh
+  http:
+    - name: "default"
+      match:
+        - gateways:
+            - mesh
+          port: 80
+      route:
+        - destination:
+            host: external-service.ardikabs.com
+            port:
+              number: 443
+            subset: mtls-default

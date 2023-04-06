@@ -1,0 +1,28 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: k8s-cluster-sgp-ardikabs-com-mtls-vs
+  namespace: istio-system
+  labels:
+    squad: "foundation"
+    tribe: "system"
+spec:
+  hosts:
+    - "k8s.cluster.sgp.ardikabs.com"
+    - "k8s-cluster-sgp.proxy.svc.cluster.local"
+  gateways:
+    - istio-system/k8s-cluster-sgp-ardikabs-com-egress-gw
+  http:
+    - name: "mtls-default"
+      match:
+        - gateways:
+            - k8s-cluster-sgp-ardikabs-com-egress-gw
+          port: 443
+      rewrite:
+        authority: k8s.cluster.sgp.ardikabs.com
+      route:
+        - destination:
+            host: k8s.cluster.sgp.ardikabs.com
+            port:
+              number: 443
+            subset: mtls-default

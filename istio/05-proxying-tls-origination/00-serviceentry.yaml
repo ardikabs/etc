@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-service-ardikabs-com-se
+  labels:
+    squad: "foundation"
+    tribe: "system"
+  namespace: istio-system
+spec:
+  exportTo:
+    - "*"
+  hosts:
+    - external-service.ardikabs.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS

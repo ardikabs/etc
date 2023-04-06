@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: k8s-cluster-sgp-ardikabs-com-se
+  namespace: istio-system
+  labels:
+    squad: "foundation"
+    tribe: "system"
+spec:
+  hosts:
+    - k8s.cluster.sgp.ardikabs.com
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS

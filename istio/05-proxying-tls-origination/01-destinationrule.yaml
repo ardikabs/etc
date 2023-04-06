@@ -1,0 +1,23 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: external-service-ardikabs-com
+  labels:
+    squad: "foundation"
+    tribe: "system"
+  namespace: istio-system
+spec:
+  exportTo:
+    - "*"
+  host: external-service.ardikabs.com
+  workloadSelector: # works only when DR is applied in the same namespace only
+    matchLabels:
+      app: podinfo
+  subsets:
+    - name: tls-origination
+      trafficPolicy:
+        portLevelSettings:
+          - port:
+              number: 443
+            tls:
+              mode: SIMPLE

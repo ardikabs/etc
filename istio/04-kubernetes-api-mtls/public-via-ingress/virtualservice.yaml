@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: k8s-cluster-sgp-ardikabs-com-vs
+  namespace: istio-system
+  labels:
+    squad: "foundation"
+    tribe: "system"
+spec:
+  hosts:
+    - "k8s.cluster.sgp.ardikabs.com"
+  gateways:
+    - istio-system/k8s-cluster-gw
+  http:
+    - name: "kubernetes-default-route"
+      route:
+        - destination:
+            host: kubernetes.default.svc.cluster.local
+            port:
+              number: 443
+            subset: tls-origination

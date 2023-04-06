@@ -1,0 +1,37 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: external-service-ardikabs-com-vs
+  namespace: istio-system
+  labels:
+    squad: "foundation"
+    tribe: "system"
+spec:
+  hosts:
+    - "external-service.ardikabs.com"
+  gateways:
+    - istio-system/external-service-ardikabs-com-eg-gw
+    - mesh
+  http:
+    - name: "default-route"
+      match:
+        - gateways:
+            - mesh
+          port: 80
+      route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+            port:
+              number: 443
+            subset: external-service-ardikabs-com-mtls
+    - name: "mtls-route"
+      match:
+        - gateways:
+            - "istio-system/external-service-ardikabs-com-eg-gw"
+          port: 443
+      route:
+        - destination:
+            host: external-service.ardikabs.com
+            port:
+              number: 443
+            subset: mtls-default
