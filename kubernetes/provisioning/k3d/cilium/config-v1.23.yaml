@@ -1,5 +1,7 @@
 apiVersion: k3d.io/v1alpha4
 kind: Simple
+metadata:
+  name: k3s-cilium
 image: docker.io/rancher/k3s:v1.23.1-k3s1
 servers: 1
 agents: 1
@@ -10,10 +12,10 @@ kubeAPI:
 ports:
   - port: 80:80
     nodeFilters:
-    - agent:*
+      - agent:*
   - port: 443:443
     nodeFilters:
-    - agent:*
+      - agent:*
 options:
   k3d:
     wait: true
