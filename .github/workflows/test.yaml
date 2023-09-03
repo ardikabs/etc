@@ -1,0 +1,58 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  unit-test:
+    runs-on: stg-local
+    steps:
+      - name: Sneak peek `github` context
+        run: |
+          id
+          echo actor=${{ github.actor }}
+          echo action_ref=${{ github.action_ref }}
+          echo ref=${{ github.ref }}
+          echo ref_name=${{ github.ref_name }}
+          echo event_name=${{ github.event_name }}
+          echo event_path=${{ github.event_path }}
+          echo job=${{ github.job }}
+          echo PR=${{ github.event.pull_request.number }}
+          echo PR_root=${{ github.event.number }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - run: printenv
+      - run: sleep 10
+        shell: bash
+
+  integration-test:
+    runs-on: stg-local
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - run: printenv
+      - run: sleep 10
+        shell: bash
+
+  regression-test:
+    runs-on: stg-local
+    needs:
+      - unit-test
+      - integration-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - run: printenv
+      - run: sleep 10
+        shell: bash

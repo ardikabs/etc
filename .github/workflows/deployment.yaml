@@ -1,0 +1,37 @@
+name: Deployment
+
+on:
+  workflow_dispatch:
+
+  workflow_run:
+    types:
+      - completed
+    workflows:
+      - Test
+
+jobs:
+  deploy:
+    runs-on: stg-local
+    environment:
+      name: Development
+    steps:
+      - name: Sneak peek `github` context
+        run: |
+          id
+          echo actor=${{ github.actor }}
+          echo action_ref=${{ github.action_ref }}
+          echo ref=${{ github.ref }}
+          echo ref_name=${{ github.ref_name }}
+          echo event_name=${{ github.event_name }}
+          echo event_path=${{ github.event_path }}
+          echo job=${{ github.job }}
+
+      - if: ${{ github.event.workflow_run == 'success' }}
+        name: Executed when the origin workflow succeeded
+        run: |
+          echo >&2 'deployment succeeded'
+
+      - if: ${{ github.event.workflow_run == 'failure' }}
+        name: Executed when the origin workflow succeeded
+        run: |
+          echo >&2 'deployment failed'

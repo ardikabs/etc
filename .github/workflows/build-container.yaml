@@ -1,0 +1,49 @@
+name: Build Container
+
+run-name: Build Container - ${{ inputs.name }}
+
+on:
+  # manual trigger workflow
+  workflow_dispatch:
+    inputs:
+      name:
+        description: The container image name, this is also being used as context to be located, which relative to `dockerfiles` directory.
+        required: true
+        type: string
+      dockerfile:
+        description: Dockerfile path relative to the context. Default to '${context}/Dockerfile'.
+        type: string
+        default: Dockerfile
+      tag:
+        description: Container image tag to be used
+        required: true
+        type: string
+        default: latest
+
+jobs:
+  build:
+    runs-on: stg-local
+    steps:
+      - uses: actions/checkout@v3
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-qemu-action@v1
+      # Reference: https://github.com/docker/setup-buildx-action/issues/105
+      - name: Set up Docker Context for Buildx
+        run: docker context create builders
+      - uses: docker/setup-buildx-action@v2
+        with:
+          platforms: linux/amd64,linux/arm64
+          endpoint: builders
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: dockerfiles/${{ inputs.name }}
+          file: dockerfiles/${{ inputs.name }}/${{ inputs.dockerfile }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}/${{ inputs.name }}:${{ inputs.tag }}
+          platforms: linux/amd64,linux/arm64
