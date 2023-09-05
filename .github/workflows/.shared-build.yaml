@@ -1,0 +1,56 @@
+on:
+  # manual trigger workflow
+  workflow_call:
+    inputs:
+      name:
+        description: The container image name.
+        required: true
+        type: string
+      context:
+        description: The context to be use during build. It defaults to the current working directory.
+        type: string
+        default: .
+      dockerfile:
+        description: Dockerfile path relative to the context. Default to '${context}/Dockerfile'.
+        type: string
+        default: Dockerfile
+      tag:
+        description: Tag to use for the container image
+        type: string
+        required: true
+      repository:
+        description: Container image repository to use to store the container image
+        type: string
+        default: ghcr.io/ardikabs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/setup-qemu-action@v2
+
+      # Reference: https://github.com/docker/setup-buildx-action/issues/105
+      - name: Set up Docker Context for Buildx
+        run: docker context create builders
+
+      - uses: docker/setup-buildx-action@v2
+        with:
+          endpoint: builders
+
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.context }}/${{ inputs.dockerfile }}
+          tags: ${{ inputs.repository }}/${{ inputs.name }}:${{ inputs.tag }}
+          push: true
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
