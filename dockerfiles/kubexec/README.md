@@ -34,4 +34,4 @@ export HELM_CHART_TESTING_VERSION=3.9.0
 
 ## Status
 
-Active, [ghcr.io/ardikabs/etc/kubeexec](https://github.com/ardikabs/etc/pkgs/container/etc%2Fkubexec)
+Active, [ghcr.io/ardikabs/etc/kubexec](https://github.com/ardikabs/etc/pkgs/container/etc%2Fkubexec)

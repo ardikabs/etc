@@ -6,7 +6,7 @@ FROM alpine:3.11
 
 LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
 LABEL org.label-schema.name="kubeexec" \
-    org.label-schema.url="https://ghcr.io/ardikabs/etc/kubeexec" \
+    org.label-schema.url="https://ghcr.io/ardikabs/etc/kubexec" \
     org.label-schema.vcs-url="https://github.com/ardikabs/etc"
 
 ENV PATH="/usr/local/bin:${PATH}"
