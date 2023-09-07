@@ -17,17 +17,17 @@ mkdir -p /opt/shared
 
 # 1. Example use case for CI/CD using GitlabCI, utilize GitlabCI artifact
 
-if ! curl -sfL -H "JOB-TOKEN: ${CI_JOB_TOKEN}" "${GITLAB_URL}/api/v4/projects/53/jobs/artifacts/master/download?job=ci-scripts" -o "${TEMPDIR}"/ci-scripts.zip; then
-cat >&2 <<'EOF'
+if ! curl -sfL -H "PRIVATE-TOKEN: ${CI_PERSONAL_ACCESS_TOKEN}" "${GITLAB_URL}/api/v4/projects/53/jobs/artifacts/master/download?job=ci-scripts" -o "${TEMPDIR}"/ci-scripts.zip; then
+   cat >&2 <<'EOF'
    📎 Hey there! It looks like an error occurs when trying to download the scripts.
 
    It is probably an issue either from GitLab or the job is completely missing or unknown.
 
-   Please contact the administrator (@team) for further details.
+   Please contact the administrator (@ardikabs) for further details.
 
    Exiting...
 EOF
-exit 1
+   exit 1
 fi
 
 unzip -qq -o "${TEMPDIR}"/ci-scripts.zip -d "${TEMPDIR}"/ci-scripts
@@ -37,7 +37,7 @@ mv "${TEMPDIR}"/ci-scripts/shared/* /opt/shared || true
 # 2. Example use case CI/CD with GitHub repository
 
 git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-git clone -b master https://github.com/<username>/pipelines "${TEMPDIR}"
+git clone -b master https://github.com/ "${TEMPDIR}" <username >/pipelines
 mv "${TEMPDIR}"/bin /usr/local/bin || true
 mv "${TEMPDIR}"/shared /opt/shared || true
 
