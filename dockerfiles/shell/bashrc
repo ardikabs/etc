@@ -1,4 +1,4 @@
-alias less='less -r'
+alias less='less -F'
 alias grep='grep --color'
 alias ls='ls -hF --color=tty'
 alias ll='ls -l'

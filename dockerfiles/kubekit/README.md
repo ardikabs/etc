@@ -21,7 +21,7 @@ You can also able to override version of the pre-installed tools, by triggering 
 ```bash
 export KUBECTL_VERSION=1.27.1
 export ARGOCD_VERSION=2.8.0
-export KUSTOMIZE_VERSION=5.0.1
+export KUSTOMIZE_VERSION=5.0.2
 export SOPS_VERSION=3.7.3
 export HELM_VERSION=3.12.0
 export HELMFILE_VERSION=0.156.0
@@ -34,4 +34,4 @@ export HELM_CHART_TESTING_VERSION=3.9.0
 
 ## Status
 
-Active, [ghcr.io/ardikabs/etc/kubexec](https://github.com/ardikabs/etc/pkgs/container/etc%2Fkubexec)
+Active, [ghcr.io/ardikabs/etc/kubekit](https://github.com/ardikabs/etc/pkgs/container/etc%2Fkubekit)
