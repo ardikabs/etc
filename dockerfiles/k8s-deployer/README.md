@@ -8,4 +8,4 @@ This is utility tools for kubernetes-related deployment.
 
 ### Status
 
-DEPRECATED, please use [kubexec](../kubexec).
+DEPRECATED, please use [kubekit](../kubekit).

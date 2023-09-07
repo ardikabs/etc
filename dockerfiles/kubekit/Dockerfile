@@ -2,11 +2,11 @@ FROM jnorwood/helm-docs:v1.11.0 as helm-docs
 
 ###
 
-FROM alpine:3.11
+FROM ghcr.io/ardikabs/etc/shell
 
 LABEL maintainer "Ardika Bagus <me@ardikabs.com>"
-LABEL org.label-schema.name="kubeexec" \
-    org.label-schema.url="https://ghcr.io/ardikabs/etc/kubexec" \
+LABEL org.label-schema.name="kubekit" \
+    org.label-schema.url="https://ghcr.io/ardikabs/etc/kubekit" \
     org.label-schema.vcs-url="https://github.com/ardikabs/etc"
 
 ENV PATH="/usr/local/bin:${PATH}"
@@ -31,15 +31,8 @@ COPY --from=helm-docs /usr/bin/helm-docs /usr/local/bin/
 RUN chmod +x /docker-entrypoint.sh && \
     apk add --no-cache \
     gettext \
-    make \
-    openssh-client \
-    curl \
-    git \
-    ca-certificates \
     gnupg \
-    jq \
-    bash && \
-    rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+    jq
 
 RUN bash /docker-entrypoint.sh
 

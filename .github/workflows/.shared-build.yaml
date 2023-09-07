@@ -53,4 +53,4 @@ jobs:
           file: ${{ inputs.context }}/${{ inputs.dockerfile }}
           tags: ${{ inputs.repository }}/${{ inputs.name }}:${{ inputs.tag }}
           push: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          platforms: linux/amd64,linux/arm64

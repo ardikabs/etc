@@ -1,4 +1,4 @@
-# kubexec
+# kubekit
 
 All-in-one image for Kubernetes related operations. The following tools installed by default:
 
