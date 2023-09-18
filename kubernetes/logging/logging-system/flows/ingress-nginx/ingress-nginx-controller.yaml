@@ -1,0 +1,20 @@
+apiVersion: logging.banzaicloud.io/v1beta1
+kind: Flow
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  filters:
+    - parser:
+        parse:
+          type: nginx
+        remove_key_name_field: false
+        reserve_data: true
+  globalOutputRefs:
+    - global-elasticsearch-output
+  match:
+    - select:
+        container_names:
+          - controller
+        labels:
+          app.kubernetes.io/instance: ingress-nginx

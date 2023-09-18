@@ -1,0 +1,35 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: kadabra
+  namespace: elastic-system
+spec:
+  auth:
+    fileRealm:
+      - secretName: devel-basic-auth
+      - secretName: techlead-basic-auth
+      - secretName: infradmin-basic-auth
+    roles:
+      - secretName: techlead-minimal-role
+      - secretName: developer-minimal-role
+  http:
+    service:
+      metadata: {}
+      spec: {}
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  monitoring:
+    logs: {}
+    metrics: {}
+  nodeSets:
+    - config:
+        node.store.allow_mmap: false
+      count: 1
+      name: default
+      podTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers: null
+  version: 8.9.2

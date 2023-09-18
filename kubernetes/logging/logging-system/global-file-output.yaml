@@ -1,0 +1,16 @@
+apiVersion: logging.banzaicloud.io/v1beta1
+kind: ClusterOutput
+metadata:
+  name: global-file-output
+  namespace: logging-system
+spec:
+  file:
+    add_path_suffix: false
+    append: true
+    compress: gzip
+    path: /tmp/log_${tag}/output
+    buffer:
+      tags: tag,time
+      timekey: 1m
+      timekey_use_utc: true
+      timekey_wait: 30s

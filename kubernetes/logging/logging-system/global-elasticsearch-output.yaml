@@ -1,0 +1,22 @@
+apiVersion: logging.banzaicloud.io/v1beta1
+kind: ClusterOutput
+metadata:
+  name: global-elasticsearch-output
+  namespace: elastic-system
+spec:
+  elasticsearch:
+    buffer:
+      tags: tag,time,$.kubernetes.pod_name
+      timekey: 1m
+      timekey_use_utc: true
+      timekey_wait: 30s
+    host: kadabra-es-http.elastic-system.svc.cluster.local
+    index_name: ${$.kubernetes.pod_name}-%Y.%m.%d
+    password:
+      valueFrom:
+        secretKeyRef:
+          key: elastic
+          name: kadabra-es-elastic-user
+    port: 9200
+    scheme: http
+    user: elastic

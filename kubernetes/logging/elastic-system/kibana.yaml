@@ -1,0 +1,20 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kadabra
+  namespace: elastic-system
+spec:
+  config:
+    server.defaultRoute: /app/discover
+  count: 1
+  elasticsearchRef:
+    name: kadabra
+  enterpriseSearchRef: {}
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  podTemplate:
+    spec:
+      containers: null
+  version: 8.9.2

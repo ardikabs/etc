@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: techlead-minimal-role
+  namespace: elastic-system
+type: Opaque
+stringData:
+  roles.yml: |-
+    techlead_minimal:
+      indices:
+      - names: ["*"]
+        privileges:
+          - view_index_metadata
+          - monitor
+          - read
+        allow_restricted_indices: false
+      applications:
+      - application: kibana-.kibana
+        privileges:
+          - feature_discover.all
+          - feature_dashboard.all
+          - feature_visualize.all
+          - feature_logs.all
+          - feature_indexPatterns.all
+        resources: ["*"]
+      transient_metadata:
+        enabled: true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: developer-minimal-role
+  namespace: elastic-system
+type: Opaque
+stringData:
+  roles.yml: |-
+    developer_minimal:
+      indices:
+      - names: ["*"]
+        privileges:
+          - view_index_metadata
+          - monitor
+          - read
+        allow_restricted_indices: false
+      applications:
+      - application: kibana-.kibana
+        privileges:
+          - read
+        resources: ["*"]

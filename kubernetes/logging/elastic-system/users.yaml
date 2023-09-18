@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: devel-basic-auth
+    namespace: elastic-system
+type: kubernetes.io/basic-auth
+stringData:
+    username: devel
+    password: ENC[AES256_GCM,data:bRz5Syit63XIWA==,iv:SeAzIWYHz3rRWxX7xDwPDSOJx3I3fbmoaZ8qbygj+rE=,tag:1ncd16sYMlyXx4a4nnLeiQ==,type:str]
+    roles: developer_minimal
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2023-09-18T15:13:52Z"
+    mac: ENC[AES256_GCM,data:TziJpLYx01ospJCTzBbXm5OdQSW7sK6lkyH6kt/JrvcTxfkihH4d9oK5gDzxlzio7XthuDoOl33mcsl9kAA97QgYbVzNcPL1u//R20eAcst8KX6VPL3uBKWqAuwSWjqgnSMg1IouzJ6pwovT+ZSogUP12I1t8fvtn0sz08cs/94=,iv:ZHfezbL+JMxtFVJB7mKGORcr2HTuRPrTeqyEX9koeFc=,tag:IkKMHjgsqyuGfnv1/NS3rg==,type:str]
+    pgp:
+        - created_at: "2023-09-18T15:13:50Z"
+          enc: |
+            -----BEGIN PGP MESSAGE-----
+
+            hQEOA+kHXLS3VXEHEAQA55qzTdknuPJtrfOYMGPkGHJhqKTof7if+RKbMv6RicS5
+            EMDiLTL8ocqEZPBJtMvTR3SHfFKtVHHcRiybCW1eX+n5TEJT0nu0+iuSyxg/fE9c
+            suTccy6Vm7kfV0RZhNlqttApSXPARwZuzc2Wrpz9F+tnbdygFj5xzAKzriP5VZ0E
+            ANlILCcyi4uha/D5SMUaFyZQ35yLPdQ/ZxMBOfzbrJE/6RBrGJvL7raAzZ7USecd
+            LN+GBa8CwE1mC/gKymutzAQ1ie3Nr3Wl9GcuqJP4bussIvkkoAuefAvHOuGSM4yq
+            gVltnr0AvTnuX8yfNSuSGYfk/fLe1I9b37pfNV+Ho5x60l4BnHsGpwjV020Myuqm
+            5Vch6eDApZk1BrZCgbFnZRq7Ctf5aaWCyzYNwpZtwZaIv1MjQ6cEHtL0g9IwneRH
+            ukLwu9ia4unpLRPXcgOL2lPz+gPo/gy4GJ+nrkKMe/hV
+            =v44J
+            -----END PGP MESSAGE-----
+          fp: AB7F3D220C912F3D94E12A84ADB25397BD8580C8
+    encrypted_regex: password
+    version: 3.7.3
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    name: techlead-basic-auth
+    namespace: elastic-system
+type: kubernetes.io/basic-auth
+stringData:
+    username: techlead
+    password: ENC[AES256_GCM,data:ToaMzkDWE/e0xBOp3m3Jtw==,iv:q+Xdxf4yAsk5d+S00K3NvN68+GadbUzROwC/fjwaeU8=,tag:gR/b2fjdUxqt/pfILCQttA==,type:str]
+    roles: techlead_minimal
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2023-09-18T15:13:52Z"
+    mac: ENC[AES256_GCM,data:TziJpLYx01ospJCTzBbXm5OdQSW7sK6lkyH6kt/JrvcTxfkihH4d9oK5gDzxlzio7XthuDoOl33mcsl9kAA97QgYbVzNcPL1u//R20eAcst8KX6VPL3uBKWqAuwSWjqgnSMg1IouzJ6pwovT+ZSogUP12I1t8fvtn0sz08cs/94=,iv:ZHfezbL+JMxtFVJB7mKGORcr2HTuRPrTeqyEX9koeFc=,tag:IkKMHjgsqyuGfnv1/NS3rg==,type:str]
+    pgp:
+        - created_at: "2023-09-18T15:13:50Z"
+          enc: |
+            -----BEGIN PGP MESSAGE-----
+
+            hQEOA+kHXLS3VXEHEAQA55qzTdknuPJtrfOYMGPkGHJhqKTof7if+RKbMv6RicS5
+            EMDiLTL8ocqEZPBJtMvTR3SHfFKtVHHcRiybCW1eX+n5TEJT0nu0+iuSyxg/fE9c
+            suTccy6Vm7kfV0RZhNlqttApSXPARwZuzc2Wrpz9F+tnbdygFj5xzAKzriP5VZ0E
+            ANlILCcyi4uha/D5SMUaFyZQ35yLPdQ/ZxMBOfzbrJE/6RBrGJvL7raAzZ7USecd
+            LN+GBa8CwE1mC/gKymutzAQ1ie3Nr3Wl9GcuqJP4bussIvkkoAuefAvHOuGSM4yq
+            gVltnr0AvTnuX8yfNSuSGYfk/fLe1I9b37pfNV+Ho5x60l4BnHsGpwjV020Myuqm
+            5Vch6eDApZk1BrZCgbFnZRq7Ctf5aaWCyzYNwpZtwZaIv1MjQ6cEHtL0g9IwneRH
+            ukLwu9ia4unpLRPXcgOL2lPz+gPo/gy4GJ+nrkKMe/hV
+            =v44J
+            -----END PGP MESSAGE-----
+          fp: AB7F3D220C912F3D94E12A84ADB25397BD8580C8
+    encrypted_regex: password
+    version: 3.7.3
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    name: infradmin-basic-auth
+    namespace: elastic-system
+type: kubernetes.io/basic-auth
+stringData:
+    username: infradmin
+    password: ENC[AES256_GCM,data:EMBHSHFO0r0R2nENsoU=,iv:4NxEBN37Woq7KZ9VAZto0NRT33oJsvlv+4EKyDfFhMk=,tag:bqWD2FeQuNhVHoAtUlELOg==,type:str]
+    roles: superuser
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2023-09-18T15:13:52Z"
+    mac: ENC[AES256_GCM,data:TziJpLYx01ospJCTzBbXm5OdQSW7sK6lkyH6kt/JrvcTxfkihH4d9oK5gDzxlzio7XthuDoOl33mcsl9kAA97QgYbVzNcPL1u//R20eAcst8KX6VPL3uBKWqAuwSWjqgnSMg1IouzJ6pwovT+ZSogUP12I1t8fvtn0sz08cs/94=,iv:ZHfezbL+JMxtFVJB7mKGORcr2HTuRPrTeqyEX9koeFc=,tag:IkKMHjgsqyuGfnv1/NS3rg==,type:str]
+    pgp:
+        - created_at: "2023-09-18T15:13:50Z"
+          enc: |
+            -----BEGIN PGP MESSAGE-----
+
+            hQEOA+kHXLS3VXEHEAQA55qzTdknuPJtrfOYMGPkGHJhqKTof7if+RKbMv6RicS5
+            EMDiLTL8ocqEZPBJtMvTR3SHfFKtVHHcRiybCW1eX+n5TEJT0nu0+iuSyxg/fE9c
+            suTccy6Vm7kfV0RZhNlqttApSXPARwZuzc2Wrpz9F+tnbdygFj5xzAKzriP5VZ0E
+            ANlILCcyi4uha/D5SMUaFyZQ35yLPdQ/ZxMBOfzbrJE/6RBrGJvL7raAzZ7USecd
+            LN+GBa8CwE1mC/gKymutzAQ1ie3Nr3Wl9GcuqJP4bussIvkkoAuefAvHOuGSM4yq
+            gVltnr0AvTnuX8yfNSuSGYfk/fLe1I9b37pfNV+Ho5x60l4BnHsGpwjV020Myuqm
+            5Vch6eDApZk1BrZCgbFnZRq7Ctf5aaWCyzYNwpZtwZaIv1MjQ6cEHtL0g9IwneRH
+            ukLwu9ia4unpLRPXcgOL2lPz+gPo/gy4GJ+nrkKMe/hV
+            =v44J
+            -----END PGP MESSAGE-----
+          fp: AB7F3D220C912F3D94E12A84ADB25397BD8580C8
+    encrypted_regex: password
+    version: 3.7.3
