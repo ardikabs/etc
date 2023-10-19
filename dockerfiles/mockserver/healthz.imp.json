@@ -1,0 +1,15 @@
+[
+  {
+    "request": {
+      "method": "GET",
+      "endpoint": "/healthz"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "text/plain"
+      },
+      "body": "HEALTHY"
+    }
+  }
+]
