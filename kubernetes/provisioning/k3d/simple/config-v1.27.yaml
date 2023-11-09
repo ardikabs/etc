@@ -1,0 +1,39 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: k3d-simple
+servers: 1
+agents: 1
+image: docker.io/rancher/k3s:v1.27.7-k3s1
+kubeAPI:
+  hostPort: "16443"
+ports:
+  - port: 6080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 6443:443
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d:
+    wait: true
+    timeout: "60s"
+    disableLoadbalancer: false
+    disableRollback: true
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --node-taint=controlplane=true:NoExecute
+        nodeFilters:
+          - server:*
+      - arg: --service-cidr=10.250.0.0/16
+        nodeFilters:
+          - server:*
+      - arg: --cluster-cidr=10.252.0.0/20
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
