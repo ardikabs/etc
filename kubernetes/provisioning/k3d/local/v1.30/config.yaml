@@ -24,10 +24,10 @@ options:
       - arg: --flannel-backend=none
         nodeFilters:
           - server:*
-      - arg: --service-cidr=10.251.0.0/16
+      - arg: --service-cidr=10.250.0.0/16
         nodeFilters:
           - server:*
-      - arg: --cluster-cidr=10.252.0.0/16
+      - arg: --cluster-cidr=10.252.0.0/18
         nodeFilters:
           - server:*
   kubeconfig:

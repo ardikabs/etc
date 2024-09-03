@@ -4,8 +4,9 @@ set -euo pipefail
 
 colima_profile=$1
 k3d_cluster_name=$2
+colima_host_iface=${3:-"bridge100"}
 
-colima_host_ip=$(ifconfig bridge100 | grep "inet " | cut -d' ' -f2)
+colima_host_ip=$(ifconfig "$colima_host_iface" | grep "inet " | cut -d' ' -f2)
 colima_vm_ip=$(colima list | grep "${colima_profile:-"default"}" | grep docker | awk '{print $8}')
 colima_vm_iface=$(colima ssh -- "ip" "-br" "addr" "show" "to" "$colima_vm_ip" | tr -s ' ' | awk '{print $1}')
 
