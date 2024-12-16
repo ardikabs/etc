@@ -85,17 +85,17 @@ v2_status = {
 
 def cpu_spike(duration):
     """Simulate a CPU spike by performing intense computation."""
-    global status
-    status["cpu"] = f"active ({duration}s)"
+    global v2_status
+    v2_status["cpu"] = f"active ({duration}s)"
     start_time = time.time()
     while time.time() - start_time < duration:
         sum(i * i for i in range(10_000))
-    status["cpu"] = "idle"
+    v2_status["cpu"] = "idle"
 
 def page_cache_spike(size_mb):
     """Simulate memory usage by filling the page cache with dummy data."""
-    global status
-    status["memory"] = f"active ({size_mb} MB)"
+    global v2_status
+    v2_status["memory"] = f"active ({size_mb} MB)"
     temp_file = "/tmp/page_cache_spike.tmp"
     size_bytes = size_mb * 1024 * 1024
 
@@ -110,7 +110,7 @@ def page_cache_spike(size_mb):
     # Optionally delay before removing the file
     time.sleep(10)
     os.remove(temp_file)
-    status["memory"] = "idle"
+    v2_status["memory"] = "idle"
 
 @app.route("/v2/start", methods=["POST"])
 def post_v2_start():
@@ -135,7 +135,7 @@ def post_v2_start():
 @app.route("/v2/status", methods=["GET"])
 def get_v2_status():
     """Endpoint to get the current status of spikes."""
-    return jsonify(status), 200
+    return jsonify(v2_status), 200
 
 
 if __name__ == '__main__':
