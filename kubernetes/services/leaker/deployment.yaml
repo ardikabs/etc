@@ -40,7 +40,7 @@ spec:
               memory: 64Mi
           livenessProbe:
             httpGet:
-              path: /status
+              path: /v1/status
               port: 5000
             failureThreshold: 3
             successThreshold: 1
@@ -49,7 +49,7 @@ spec:
             timeoutSeconds: 1
           readinessProbe:
             httpGet:
-              path: /status
+              path: /v1/status
               port: 5000
             failureThreshold: 3
             successThreshold: 1
