@@ -83,60 +83,86 @@ v2_status = {
     "memory": "idle"
 }
 
-def cpu_spike(duration):
+v2_spike_processes = {
+    "cpu": None,
+    "memory": None
+}
+
+def simulate_cpu_spike(duration):
     """Simulate a CPU spike by performing intense computation."""
-    global v2_status
     v2_status["cpu"] = f"active ({duration}s)"
     start_time = time.time()
     while time.time() - start_time < duration:
-        sum(i * i for i in range(10_000))
+        sum(i * i for i in range(10_000))  # CPU-intensive computation
     v2_status["cpu"] = "idle"
 
-def page_cache_spike(size_mb):
+def simulate_memory_spike(size_mb, duration):
     """Simulate memory usage by filling the page cache with dummy data."""
-    global v2_status
-    v2_status["memory"] = f"active ({size_mb} MB)"
+    v2_status["memory"] = f"active ({size_mb} MB, {duration}s)"
     temp_file = "/tmp/page_cache_spike.tmp"
     size_bytes = size_mb * 1024 * 1024
 
-    with open(temp_file, "wb") as f:
-        f.write(b"0" * size_bytes)
+    try:
+        with open(temp_file, "wb") as f:
+            f.write(b"0" * size_bytes)
 
-    # Memory-map the file to force it into the page cache
-    with open(temp_file, "r+b") as f:
-        with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_WRITE) as mm:
-            mm[:] = b"1" * len(mm)  # Modify the content to keep it "active" in the cache
+        # Memory-map the file to force it into the page cache
+        with open(temp_file, "r+b") as f:
+            with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_WRITE) as mm:
+                mm[:] = b"1" * len(mm)  # Modify content to keep it "active"
 
-    # Optionally delay before removing the file
-    time.sleep(10)
-    os.remove(temp_file)
-    v2_status["memory"] = "idle"
+        time.sleep(duration)  # Keep the memory spike active for the given duration
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+        v2_status["memory"] = "idle"
 
 @app.route("/v2/start", methods=["POST"])
 def post_v2_start():
     resource = request.args.get('resource', 'memory').lower()
+    payload = request.json or {}
 
     if resource == "cpu":
-        """Endpoint to simulate a CPU spike."""
-        duration = int(request.json.get("duration", 5))  # default to 5 seconds
-        process = multiprocessing.Process(target=cpu_spike, args=(duration,))
+        if v2_spike_processes["cpu"] and v2_spike_processes["cpu"].is_alive():
+            return jsonify({"error": "CPU spike is already running"}), 400
+
+        duration = int(payload.get("duration", 5))  # Default duration: 5 seconds
+        process = multiprocessing.Process(target=simulate_cpu_spike, args=(duration,))
+        v2_spike_processes["cpu"] = process
         process.start()
         return jsonify({"status": "CPU spike initiated", "duration": duration}), 200
 
     elif resource == "memory":
-        """Endpoint to simulate a memory spike via page cache."""
-        size_mb = int(request.json.get("size_mb", 100))  # default to 100 MB
-        process = multiprocessing.Process(target=page_cache_spike, args=(size_mb,))
+        if v2_spike_processes["memory"] and v2_spike_processes["memory"].is_alive():
+            return jsonify({"error": "Memory spike is already running"}), 400
+
+        size_mb = int(payload.get("size_mb", 100))  # Default size: 100 MB
+        duration = int(payload.get("duration", 10))  # Default duration: 10 seconds
+        process = multiprocessing.Process(target=simulate_memory_spike, args=(size_mb, duration))
+        v2_spike_processes["memory"] = process
         process.start()
-        return jsonify({"status": "Memory (page cache) spike initiated", "size_mb": size_mb}), 200
+        return jsonify({"status": "Memory spike initiated", "size_mb": size_mb, "duration": duration}), 200
 
     return jsonify({"error": "Invalid resource type"}), 400
+
+@app.route("/v2/stop", methods=["POST"])
+def post_v2_stop():
+    resource = request.args.get('resource', 'memory').lower()
+
+    if resource in v2_spike_processes and v2_spike_processes[resource]:
+        process = v2_spike_processes[resource]
+        if process.is_alive():
+            process.terminate()
+            v2_spike_processes[resource] = None
+            v2_status[resource] = "idle"
+            return jsonify({"status": f"{resource.capitalize()} spike stopped"}), 200
+
+    return jsonify({"error": f"No active {resource} spike to stop"}), 400
 
 @app.route("/v2/status", methods=["GET"])
 def get_v2_status():
     """Endpoint to get the current status of spikes."""
     return jsonify(v2_status), 200
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
