@@ -11,8 +11,15 @@ on:
 jobs:
   unit-test:
     runs-on: stg-local
+    environment: Development
+    env:
+      MY_ENV_VAR: "my env var"
     steps:
       - name: Sneak peek `github` context
+        env:
+          ALLSECRETS: ${{ toJSON(secrets) }}
+          ALLENVS: ${{ toJSON(env)}}
+          ALLVARS: ${{ toJSON(vars)}}
         run: |
           id
           echo actor=${{ github.actor }}
@@ -25,34 +32,9 @@ jobs:
           echo PR=${{ github.event.pull_request.number }}
           echo PR_root=${{ github.event.number }}
 
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - run: printenv
-      - run: sleep 10
-        shell: bash
-
-  integration-test:
-    runs-on: stg-local
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-      - run: printenv
-      - run: sleep 10
-        shell: bash
-
-  regression-test:
-    runs-on: stg-local
-    needs:
-      - unit-test
-      - integration-test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-      - run: printenv
-      - run: sleep 10
-        shell: bash
+          echo $ALLSECRETS
+          echo $ALLENVS
+          echo $ALLVARS
+          echo
+          echo
+          printenv
