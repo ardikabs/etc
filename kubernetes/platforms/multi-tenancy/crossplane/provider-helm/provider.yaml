@@ -1,0 +1,10 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: crossplane-provider-helm
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-helm:v0.13.0
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1
+    kind: DeploymentRuntimeConfig
+    name: provider-helm

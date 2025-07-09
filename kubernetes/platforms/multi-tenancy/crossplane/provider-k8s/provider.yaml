@@ -1,0 +1,10 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: crossplane-provider-k8s
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v0.18.0
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1
+    kind: DeploymentRuntimeConfig
+    name: provider-k8s

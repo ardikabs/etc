@@ -1,0 +1,17 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-k8s
+spec:
+  serviceAccountTemplate:
+    metadata:
+      name: provider-k8s
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+          - name: package-runtime
+            args:
+            - --debug

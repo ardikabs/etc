@@ -1,0 +1,68 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xkubernetesclusters.systems.ardikabs.com
+spec:
+  group: systems.ardikabs.com
+  names:
+    kind: XKubernetesCluster
+    plural: xkubernetesclusters
+  claimNames:
+    kind: KubernetesCluster
+    plural: kubernetesclusters
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              k8s:
+                type: object
+                properties:
+                  environment:
+                    description: Name of the environment for the corresponding Kubernetes cluster
+                    type: string
+
+              components:
+                type: object
+                properties:
+                  argocd:
+                    type: object
+                    properties:
+                      namespace:
+                        description: Namespace of the argocd component to be deployed
+                        type: string
+
+                      helmChartVersion:
+                        description: Helm chart version for ArgoCD Deployment
+                        type: string
+
+                      helmValues:
+                        description: Helm values for ArgoCD deployment
+                        x-kubernetes-preserve-unknown-fields: true
+                        type: object
+          status:
+            type: object
+            properties:
+              vcluster:
+                type: object
+                properties:
+                  kubeconfigSecretRef:
+                    description: The secret that holds the Kubeconfig for the virtual cluster.
+                    type: object
+                    properties:
+                      name:
+                        description: Name of the secret reference
+                        type: string
+                  helmProviderRef:
+                    description: The ProviderConfig object for Helm provider created for vcluster
+                    type: object
+                    properties:
+                      name:
+                        description: Name of the secret reference
+                        type: string

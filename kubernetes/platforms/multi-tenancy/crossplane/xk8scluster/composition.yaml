@@ -1,0 +1,243 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: default-k8s-vcluster
+spec:
+  compositeTypeRef:
+    apiVersion: systems.ardikabs.com/v1alpha1
+    kind: XKubernetesCluster
+  mode: Pipeline
+  pipeline:
+    - step: provision-vcluster
+      functionRef:
+        name: default
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: helm-provision-vcluster
+            base:
+              apiVersion: helm.crossplane.io/v1beta1
+              kind: Release
+              metadata:
+                name: vcluster
+              spec:
+                forProvider:
+                  chart:
+                    name: vcluster
+                    repository: https://charts.loft.sh
+                    version: 0.25.1
+                  namespace: vcluster
+                  skipCreateNamespace: false
+                  values:
+                    controlPlane:
+                      statefulSet:
+                        image:
+                          repository: loft-sh/vcluster-oss
+
+                      proxy:
+                        extraSANs:
+                          - my-vcluster.com
+
+                    exportKubeConfig:
+                      additionalSecrets:
+                        - name: vcluster-test
+                          context: vcluster-test
+                          server: https://my-vcluster.com
+
+                    sync:
+                      toHost:
+                        podDisruptionBudgets:
+                          enabled: true
+                        serviceAccounts:
+                          enabled: true
+
+                      fromHost:
+                        nodes:
+                          enabled: true
+                          clearImageStatus: true
+                          selector:
+                            all: true
+
+                providerConfigRef:
+                  name: in-cluster
+
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vcluster"
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.namespace
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.values.exportKubeConfig.additionalSecrets[0].context
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vcluster"
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.values.exportKubeConfig.additionalSecrets[0].name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "vc-%s-kubeconfig"
+
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: metadata.name
+                    - fromFieldPath: metadata.name
+                  strategy: string
+                  string:
+                    fmt: "%s-vcluster.%s.svc.cluster.local"
+                toFieldPath: spec.forProvider.values.controlPlane.proxy.extraSANs[0]
+
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: metadata.name
+                    - fromFieldPath: metadata.name
+                  strategy: string
+                  string:
+                    fmt: "https://%s-vcluster.%s.svc.cluster.local"
+                toFieldPath: spec.forProvider.values.exportKubeConfig.additionalSecrets[0].server
+
+              - type: ToCompositeFieldPath
+                fromFieldPath: metadata.labels[crossplane.io/composite]
+                toFieldPath: status.vcluster.kubeconfigSecretRef.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "vc-%s-kubeconfig"
+
+          - name: observe-namespace-delete
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha1
+              kind: Object
+              metadata:
+                name: object
+              spec:
+                deletionPolicy: Delete
+                managementPolicy: ObserveDelete
+                forProvider:
+                  manifest:
+                    apiVersion: v1
+                    kind: Namespace
+                    name: vcluster-ns
+                providerConfigRef:
+                  name: in-cluster
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.name
+
+          - name: setup-provider-config-helm-for-vcluster
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha1
+              kind: Object
+              metadata:
+                name: object
+              spec:
+                forProvider:
+                  manifest:
+                    apiVersion: helm.crossplane.io/v1beta1
+                    kind: ProviderConfig
+                    metadata:
+                      name: foo
+                    spec:
+                      credentials:
+                        secretRef:
+                          key: config
+                          name: vcluster-kubeconfig
+                          namespace: foo
+                        source: Secret
+                providerConfigRef:
+                  name: in-cluster
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-providerconfig"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: status.vcluster.kubeconfigSecretRef.name
+                toFieldPath: spec.forProvider.manifest.spec.credentials.secretRef.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.manifest.spec.credentials.secretRef.namespace
+              - type: ToCompositeFieldPath
+                fromFieldPath: spec.forProvider.manifest.metadata.name
+                toFieldPath: status.vcluster.helmProviderRef.name
+
+          - name: setup-component-argocd-on-vcluster
+            base:
+              apiVersion: helm.crossplane.io/v1beta1
+              kind: Release
+              metadata:
+                name: argocd
+              spec:
+                forProvider:
+                  chart:
+                    name: argo-cd
+                    repository: https://argoproj.github.io/argo-helm
+                    version: 5.21.0
+                  namespace: argocd
+                  values:
+                    nameOverride: argocd
+                    fullnameOverride: argocd
+                providerConfigRef:
+                  name: vcluster
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-argocd"
+              - type: FromCompositeFieldPath
+                fromFieldPath: status.vcluster.helmProviderRef.name
+                toFieldPath: spec.providerConfigRef.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.components.argocd.namespace
+                toFieldPath: spec.forProvider.namespace
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.components.argocd.helmChartVersion
+                toFieldPath: spec.forProvider.chart.version
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.components.argocd.helmValues
+                toFieldPath: spec.forProvider.values
+                policy:
+                  toFieldPath: MergeObjectsAppendArrays
+
+    - step: auto-detect-ready-composed-resources
+      functionRef:
+        name: auto-ready-detector
