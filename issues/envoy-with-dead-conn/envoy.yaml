@@ -1,0 +1,52 @@
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: 8082
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: firewall_cluster
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  - name: firewall_cluster
+    connect_timeout: 1s # Short connect timeout
+    type: LOGICAL_DNS # Or STATIC for direct IP
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: firewall_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: firewall_simulator # Point to our firewall simulator
+                port_value: 8081
+    # IMPORTANT: Set Envoy's idle_timeout to be LONGER than the firewall's
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        common_http_protocol_options:
+          idle_timeout: 15s # Envoy's idle timeout (15 seconds) > Firewall's (5 seconds)
+        explicit_http_config:
+          http_protocol_options: {}

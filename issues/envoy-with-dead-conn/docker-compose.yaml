@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  upstream_server:
+    build: ./upstream_server
+    ports:
+      - "8080:8080" # Expose for direct testing, not strictly needed for the chain
+    networks:
+      - app_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  firewall_simulator:
+    build: ./firewall_simulator
+    environment:
+      # Set the firewall's idle timeout here.
+      # This simulates the AWS Network Firewall's 350s, but for quick testing, 5s is better.
+      FIREWALL_IDLE_TIMEOUT: 5
+    ports:
+      - "8081:8081" # Expose for direct testing, not strictly needed for the chain
+    depends_on:
+      - upstream_server
+    networks:
+      - app_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  envoy_proxy:
+    image: envoyproxy/envoy:contrib-v1.31-latest
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    ports:
+      - "8082:8082" # This is the port you'll hit from your host machine
+    depends_on:
+      - firewall_simulator
+    networks:
+      - app_network
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  app_network:
+    driver: bridge
