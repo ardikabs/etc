@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: auth-service-mesh-se
+  namespace: istio-system
+spec:
+  hosts:
+    - auth.backend.svc.cluster.local
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  location: MESH_INTERNAL
+  resolution: STATIC
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: auth-service-mesh-vs
+  namespace: istio-system
+spec:
+  hosts:
+    - "auth.backend.svc.cluster.local"
+  gateways:
+    - mesh
+  http:
+    - match:
+        - gateways:
+            - mesh
+          port: 80
+      route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+            port:
+              number: 80

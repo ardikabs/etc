@@ -1,0 +1,80 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: auth-service-egress-se
+  namespace: istio-system
+spec:
+  exportTo:
+    - "."
+  hosts:
+    - auth.ardikabs.com
+  ports:
+    - number: 443
+      name: tls
+      protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: auth-service-egress-dr
+  namespace: istio-system
+spec:
+  exportTo:
+    - "."
+  host: auth.ardikabs.com
+  subsets:
+    - name: auth-service-tls-origin
+      trafficPolicy:
+        portLevelSettings:
+          - port:
+              number: 443
+            tls:
+              mode: SIMPLE
+              sni: auth.ardikabs.com
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: auth-service-egress-gw
+  namespace: istio-system
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - auth.backend.svc.cluster.local
+      tls:
+        mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: auth-service-egress-vs
+  namespace: istio-system
+spec:
+  exportTo:
+    - "."
+  hosts:
+    - "auth.backend.svc.cluster.local"
+  gateways:
+    - istio-system/auth-egress-gw
+  http:
+    - match:
+        - gateways:
+            - "istio-system/auth-service-egress-gw"
+          port: 443
+      rewrite:
+        authority: auth.ardikabs.com
+      route:
+        - destination:
+            host: auth.ardikabs.com
+            port:
+              number: 443
+            subset: auth-service-tls-origin
+---

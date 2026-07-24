@@ -1,0 +1,59 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: auth-service-mesh-se
+  namespace: istio-system
+spec:
+  hosts:
+    - auth.backend.svc.cluster.local
+  ports:
+    - number: 80
+      name: http
+      protocol: HTTP
+  location: MESH_INTERNAL
+  resolution: STATIC
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: auth-service-mesh-dr
+  namespace: istio-system
+spec:
+  host: istio-egressgateway.istio-system.svc.cluster.local
+  subsets:
+  - name: auth-service-mesh-to-egress-mtls
+    trafficPolicy:
+      loadBalancer:
+        simple: ROUND_ROBIN
+      portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: ISTIO_MUTUAL
+          sni: auth-service.backend.svc.cluster.local
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: auth-service-mesh-vs
+  namespace: istio-system
+spec:
+  hosts:
+    - "auth-service.backend.svc.cluster.local"
+  gateways:
+    - mesh
+  http:
+    - match:
+        - gateways:
+            - mesh
+          port: 80
+      rewrite:
+        uri: /auth/
+      route:
+        - destination:
+            host: istio-egressgateway.istio-system.svc.cluster.local
+            port:
+              number: 443
+            subset: auth-service-mesh-to-egress-mtls
+---
